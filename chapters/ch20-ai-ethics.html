@@ -45,7 +45,7 @@
             background: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.8;
-            padding-left: var(--nav-width);
+            padding-left: var(--nav-width); padding-right: 280px;
             min-height: 100vh;
         }
 
@@ -294,7 +294,6 @@
     <nav class="nav">
         <div class="nav-content">
             <div class="nav-logo">Spring AI</div>
-            <div class="nav-logo">Spring AI</div>
             <div class="nav-section">第一阶段：基础入门</div>
             <div class="nav-links">
                 <a href="ch01-foundation.html">第01章 基础准备</a>
@@ -360,7 +359,6 @@
                 <a href="ch40-career-roadmap.html">第40章 职业路线</a>
             </div>
             <a href="../springai-learning-map.html" class="nav-back">&#8592; 返回学习地图</a>
-            &#8592; 返回学习地图</a>
         </div>
     </nav>
 
@@ -1390,7 +1388,7 @@
                 a.href = '#' + section.id;
 
                 // 提取纯文本标题（去掉 emoji）
-                let text = title.textContent.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim();
+                let text = title.textContent.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]+/gu, '').trim();
                 // 截断过长的标题
                 if (text.length > 25) text = text.substring(0, 25) + '...';
 
