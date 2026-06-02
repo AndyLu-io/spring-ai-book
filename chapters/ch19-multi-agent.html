@@ -324,6 +324,14 @@
                 <a href="ch29-career-roadmap.html">第29章 职业路线</a>
                 <a href="ch30-frontier-trends.html">第30章 前沿趋势</a>
             </div>
+            </div>
+            <div class="nav-section">第八阶段：S级深度强化</div>
+            <div class="nav-links">
+                <a href="ch31-springai-internals.html">第31章 Spring AI 内部原理与源码剖析</a>
+                <a href="ch32-performance-benchmark.html">第32章 Agent 系统性能工程与基准测试</a>
+                <a href="ch33-framework-comparison.html">第33章 AI Agent 框架对比与选型指南</a>
+                <a href="ch34-observability.html">第34章 Agent 可观测性与监控体系</a>
+            </div>
             <a href="../springai-learning-map.html" class="nav-back">&#8592; 返回学习地图</a>
         </div>
     </nav>
@@ -1267,6 +1275,316 @@
             </div>
         </section>
 
+        <!-- 企业级多Agent高级场景 -->
+        <section class="section" id="enterprise">
+            <h2 class="section-title">&#127970; 企业级多 Agent 高级场景</h2>
+
+            <div class="card">
+                <h3>1. Agent 失败恢复机制</h3>
+                <p>在生产环境中，Agent 可能因为各种原因失败（LLM 超时、工具调用错误、网络中断）。需要设计完善的失败恢复机制。</p>
+
+                <div class="code-block">
+<span class="cmt">// Agent 失败恢复策略</span>
+<span class="kw">public class</span> <span class="cls">AgentRetryPolicy</span> {
+    <span class="kw">private final int</span> maxRetries = <span class="num">3</span>;
+    <span class="kw">private final</span> <span class="cls">Duration</span> retryDelay = <span class="cls">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">2</span>);
+
+    <span class="kw">public</span> <span class="cls">Mono</span>&lt;<span class="cls">AgentResult</span>&gt; <span class="fn">executeWithRetry</span>(
+            <span class="cls">Agent</span> agent, <span class="cls">Task</span> task) {
+        <span class="kw">return</span> <span class="cls">Mono</span>.<span class="fn">defer</span>(() -&gt; agent.<span class="fn">execute</span>(task))
+            .<span class="fn">retryWhen</span>(<span class="cls">Retry</span>.<span class="fn">backoff</span>(maxRetries, retryDelay)
+                .<span class="fn">filter</span>(ex -&gt; ex <span class="kw">instanceof</span> <span class="cls">AgentException</span>))
+            .<span class="fn">onErrorResume</span>(ex -&gt; <span class="cls">Mono</span>.<span class="fn">just</span>(
+                <span class="cls">AgentResult</span>.<span class="fn">fallback</span>(<span class="str">"Agent 不可用，请稍后重试"</span>)));
+    }
+}
+</div>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; 失败恢复策略要点</div>
+                    <ul class="styled-list">
+                        <li><strong>指数退避重试</strong>：避免在 Agent 故障时立即重试造成雪崩</li>
+                        <li><strong>熔断降级</strong>：当失败率超过阈值时，自动切换到备用 Agent 或降级策略</li>
+                        <li><strong>优雅降级</strong>：返回有意义的 fallback 结果，而非直接报错</li>
+                        <li><strong>失败隔离</strong>：单个 Agent 失败不应导致整个多 Agent 系统崩溃</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>2. 跨 Agent 状态同步</h3>
+                <p>当多个 Agent 协作处理复杂任务时，需要保持状态一致性。</p>
+
+                <div class="diagram">
+<pre><span class="hl">分布式 Agent 状态同步：</span>
+
+  ┌─────────────────────────────────────────────────────┐
+  │                                                     │
+  │  Agent A ──────┐                                    │
+  │                │                                    │
+  │  Agent B ──────┼──> <span class="hl">状态协调器</span> ──> Redis/MongoDB    │
+  │                │                                    │
+  │  Agent C ──────┘                                    │
+  │                                                     │
+  │  同步机制：                                          │
+  │  • 事件驱动：Agent 状态变更发布事件                    │
+  │  • 最终一致性：接受短暂的不一致                       │
+  │  • 冲突解决：基于时间戳或优先级                       │
+  └─────────────────────────────────────────────────────┘</pre>
+                </div>
+
+                <div class="code-block">
+<span class="cmt">/**
+ * 分布式 Agent 状态协调器
+ * 使用事件驱动实现最终一致性
+ */</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">AgentStateCoordinator</span> {
+
+    <span class="kw">private final</span> <span class="cls">RedisTemplate</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; redis;
+    <span class="kw">private final</span> <span class="cls">ApplicationEventPublisher</span> eventPublisher;
+
+    <span class="cmt">// 状态变更事件</span>
+    <span class="kw">public record</span> <span class="cls">StateChangeEvent</span>(
+        <span class="cls">String</span> agentId,
+        <span class="cls">String</span> taskContext,
+        <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; state,
+        <span class="cls">Instant</span> timestamp
+    ) <span class="kw">extends</span> <span class="cls">ApplicationEvent</span> {
+        <span class="kw">public</span> <span class="cls">StateChangeEvent</span>(<span class="cls">Object</span> src, <span class="cls">String</span> agentId,
+                <span class="cls">String</span> taskContext, <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; state) {
+            <span class="kw">super</span>(src);
+            <span class="kw">this</span>.agentId = agentId;
+            <span class="kw">this</span>.taskContext = taskContext;
+            <span class="kw">this</span>.state = state;
+            <span class="kw">this</span>.timestamp = <span class="cls">Instant</span>.<span class="fn">now</span>();
+        }
+    }
+
+    <span class="cmt">/**
+     * 发布状态变更
+     */</span>
+    <span class="kw">public void</span> <span class="fn">publishStateChange</span>(<span class="cls">String</span> agentId,
+            <span class="cls">String</span> taskContext, <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; state) {
+        <span class="cmt">// 持久化到 Redis</span>
+        <span class="cls">String</span> key = <span class="str">"state:"</span> + taskContext + <span class="str">":"</span> + agentId;
+        redis.<span class="fn">opsForHash</span>().<span class="fn">putAll</span>(key, state);
+        redis.<span class="fn">expire</span>(key, <span class="cls">Duration</span>.<span class="fn">ofHours</span>(<span class="num">1</span>));
+
+        <span class="cmt">// 发布事件通知其他 Agent</span>
+        eventPublisher.<span class="fn">publishEvent</span>(
+            <span class="kw">new</span> <span class="cls">StateChangeEvent</span>(<span class="kw">this</span>, agentId, taskContext, state));
+    }
+
+    <span class="cmt">/**
+     * 获取全局状态快照（带冲突解决）
+     */</span>
+    <span class="kw">public</span> <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; <span class="fn">getGlobalState</span>(
+            <span class="cls">String</span> taskContext) {
+        <span class="cls">String</span> pattern = <span class="str">"state:"</span> + taskContext + <span class="str">":*"</span>;
+        <span class="cls">Set</span>&lt;<span class="cls">String</span>&gt; keys = redis.<span class="fn">keys</span>(pattern);
+        <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; globalState = <span class="kw">new</span> <span class="cls">HashMap</span>&lt;&gt;();
+
+        keys.<span class="fn">forEach</span>(key -&gt; {
+            <span class="cls">Map</span>&lt;<span class="cls">Object</span>, <span class="cls">Object</span>&gt; entries =
+                redis.<span class="fn">opsForHash</span>().<span class="fn">entries</span>(key);
+            globalState.<span class="fn">putAll</span>(entries);
+        });
+
+        <span class="kw">return</span> globalState;
+    }
+}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>3. 分布式 Agent 事务</h3>
+                <p>在涉及多个 Agent 的复杂业务流程中，需要保证事务的完整性。</p>
+
+                <div class="code-block">
+<span class="cmt">// Saga 模式实现分布式 Agent 事务</span>
+<span class="kw">public class</span> <span class="cls">AgentSaga</span> {
+    <span class="kw">private final</span> <span class="cls">List</span>&lt;<span class="cls">SagaStep</span>&gt; steps;
+    <span class="kw">private final</span> <span class="cls">List</span>&lt;<span class="cls">SagaStep</span>&gt; compensations;
+
+    <span class="kw">public</span> <span class="cls">Mono</span>&lt;<span class="cls">SagaResult</span>&gt; <span class="fn">execute</span>(<span class="cls">SagaContext</span> ctx) {
+        <span class="kw">return</span> <span class="cls">Flux</span>.<span class="fn">fromIterable</span>(steps)
+            .<span class="fn">concatMap</span>(step -&gt; step.<span class="fn">execute</span>(ctx)
+                .<span class="fn">onErrorResume</span>(ex -&gt; {
+                    <span class="cmt">// 执行补偿操作</span>
+                    <span class="kw">return</span> <span class="fn">compensate</span>(ctx, ex);
+                }))
+            .<span class="fn">then</span>(<span class="cls">Mono</span>.<span class="fn">just</span>(<span class="cls">SagaResult</span>.<span class="fn">success</span>()));
+    }
+
+    <span class="kw">private</span> <span class="cls">Mono</span>&lt;<span class="cls">SagaResult</span>&gt; <span class="fn">compensate</span>(
+            <span class="cls">SagaContext</span> ctx, <span class="cls">Exception</span> ex) {
+        <span class="kw">return</span> <span class="cls">Flux</span>.<span class="fn">fromIterable</span>(
+                <span class="cls">List</span>.<span class="fn">of</span>(compensations).<span class="fn">reversed</span>())
+            .<span class="fn">concatMap</span>(comp -&gt; comp.<span class="fn">execute</span>(ctx))
+            .<span class="fn">then</span>(<span class="cls">Mono</span>.<span class="fn">error</span>(ex));
+    }
+}
+</div>
+
+                <div class="info-box">
+                    <div class="label">&#128161; Saga 模式核心概念</div>
+                    <ul class="styled-list">
+                        <li><strong>正向步骤</strong>：每个 Agent 按顺序执行各自的业务逻辑</li>
+                        <li><strong>补偿步骤</strong>：当某步失败时，逆序执行已完成步骤的补偿操作</li>
+                        <li><strong>状态持久化</strong>：每步执行结果持久化，支持断点续传</li>
+                        <li><strong>超时控制</strong>：每步设置超时阈值，避免长时间阻塞</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>4. 多 Agent 负载均衡</h3>
+                <p>当相同类型的 Agent 有多个实例时，需要设计智能的负载均衡策略。</p>
+
+                <div class="diagram">
+<pre><span class="hl">多 Agent 负载均衡策略：</span>
+
+  ┌─────────────────────────────────────────────────────┐
+  │                                                     │
+  │  任务输入 ──> <span class="hl">负载均衡器</span>                            │
+  │                │                                    │
+  │       ┌───────┼───────┐                            │
+  │       ▼       ▼       ▼                            │
+  │    Agent-1  Agent-2  Agent-3                       │
+  │                                                     │
+  │  策略选择：                                          │
+  │  • 轮询（Round Robin）：简单公平                     │
+  │  • 加权轮询：根据 Agent 能力分配                     │
+  │  • 最少连接：选择负载最低的 Agent                    │
+  │  • 一致性哈希：相同任务路由到相同 Agent              │
+  │  • 基于能力：根据任务类型选择最优 Agent              │
+  └─────────────────────────────────────────────────────┘</pre>
+                </div>
+
+                <div class="code-block">
+<span class="cmt">/**
+ * 多 Agent 负载均衡器
+ * 支持多种负载均衡策略
+ */</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">AgentLoadBalancer</span> {
+
+    <span class="kw">private final</span> <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">List</span>&lt;<span class="cls">Agent</span>&gt;&gt; agentPools = <span class="kw">new</span> <span class="cls">ConcurrentHashMap</span>&lt;&gt;();
+    <span class="kw">private final</span> <span class="cls">AtomicInteger</span> roundRobinCounter = <span class="kw">new</span> <span class="cls">AtomicInteger</span>(<span class="num">0</span>);
+
+    <span class="cmt">/**
+     * 轮询策略
+     */</span>
+    <span class="kw">public</span> <span class="cls">Agent</span> <span class="fn">roundRobin</span>(<span class="cls">String</span> agentType) {
+        <span class="cls">List</span>&lt;<span class="cls">Agent</span>&gt; pool = agentPools.<span class="fn">get</span>(agentType);
+        <span class="kw">int</span> index = roundRobinCounter.<span class="fn">getAndIncrement</span>() % pool.<span class="fn">size</span>();
+        <span class="kw">return</span> pool.<span class="fn">get</span>(index);
+    }
+
+    <span class="cmt">/**
+     * 最少连接策略
+     */</span>
+    <span class="kw">public</span> <span class="cls">Agent</span> <span class="fn">leastConnections</span>(<span class="cls">String</span> agentType) {
+        <span class="kw">return</span> agentPools.<span class="fn">get</span>(agentType).<span class="fn">stream</span>()
+            .<span class="fn">min</span>(<span class="cls">Comparator</span>.<span class="fn">comparingInt</span>(<span class="cls">Agent</span>::activeTaskCount))
+            .<span class="fn">orElseThrow</span>();
+    }
+
+    <span class="cmt">/**
+     * 加权轮询策略
+     */</span>
+    <span class="kw">public</span> <span class="cls">Agent</span> <span class="fn">weightedRoundRobin</span>(<span class="cls">String</span> agentType) {
+        <span class="cls">List</span>&lt;<span class="cls">WeightedAgent</span>&gt; pool = agentPools.<span class="fn">get</span>(agentType)
+            .<span class="fn">stream</span>()
+            .<span class="fn">map</span>(a -&gt; <span class="kw">new</span> <span class="cls">WeightedAgent</span>(a, a.<span class="fn">weight</span>()))
+            .<span class="fn">toList</span>();
+
+        <span class="kw">int</span> totalWeight = pool.<span class="fn">stream</span>()
+            .<span class="fn">mapToInt</span>(<span class="cls">WeightedAgent</span>::weight).<span class="fn">sum</span>();
+        <span class="kw">int</span> random = <span class="kw">new</span> <span class="cls">Random</span>().<span class="fn">nextInt</span>(totalWeight);
+
+        <span class="kw">int</span> cumulative = 0;
+        <span class="kw">for</span> (<span class="cls">WeightedAgent</span> wa : pool) {
+            cumulative += wa.weight();
+            <span class="kw">if</span> (random &lt; cumulative) {
+                <span class="kw">return</span> wa.agent();
+            }
+        }
+        <span class="kw">return</span> pool.<span class="fn">get</span>(pool.<span class="fn">size</span>() - <span class="num">1</span>).agent();
+    }
+}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>5. 多 Agent 监控与告警</h3>
+                <p>生产环境需要对多 Agent 系统进行全面的监控和告警。</p>
+
+                <div class="info-box">
+                    <div class="label">&#128202; 监控指标体系</div>
+                    <ul class="styled-list">
+                        <li><strong>任务级指标</strong>：任务完成率、平均延迟、失败率</li>
+                        <li><strong>Agent 级指标</strong>：Agent 利用率、响应时间、错误率</li>
+                        <li><strong>系统级指标</strong>：CPU/内存使用率、网络延迟、队列长度</li>
+                        <li><strong>成本级指标</strong>：Token 消耗、API 调用成本、每任务成本</li>
+                    </ul>
+                </div>
+
+                <div class="code-block">
+<span class="cmt">/**
+ * 多 Agent 监控服务
+ * 基于 Micrometer + Prometheus 实现
+ */</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">AgentMonitoringService</span> {
+
+    <span class="kw">private final</span> <span class="cls">MeterRegistry</span> registry;
+
+    <span class="kw">public void</span> <span class="fn">recordTaskExecution</span>(
+            <span class="cls">String</span> agentId, <span class="cls">String</span> taskType,
+            <span class="cls">Duration</span> duration, <span class="kw">boolean</span> success) {
+
+        <span class="cmt">// 任务延迟指标</span>
+        <span class="cls">Timer</span>.<span class="fn">builder</span>(<span class="str">"agent.task.duration"</span>)
+            .<span class="fn">tag</span>(<span class="str">"agent"</span>, agentId)
+            .<span class="fn">tag</span>(<span class="str">"task_type"</span>, taskType)
+            .<span class="fn">tag</span>(<span class="str">"status"</span>, success ? <span class="str">"success"</span> : <span class="str">"failure"</span>)
+            .<span class="fn">register</span>(registry)
+            .<span class="fn">record</span>(duration);
+
+        <span class="cmt">// 任务计数器</span>
+        <span class="cls">Counter</span>.<span class="fn">builder</span>(<span class="str">"agent.task.count"</span>)
+            .<span class="fn">tag</span>(<span class="str">"agent"</span>, agentId)
+            .<span class="fn">tag</span>(<span class="str">"status"</span>, success ? <span class="str">"success"</span> : <span class="str">"failure"</span>)
+            .<span class="fn">register</span>(registry)
+            .<span class="fn">increment</span>();
+    }
+
+    <span class="cmt">/**
+     * Token 消耗追踪
+     */</span>
+    <span class="kw">public void</span> <span class="fn">recordTokenUsage</span>(
+            <span class="cls">String</span> agentId, <span class="kw">int</span> inputTokens, <span class="kw">int</span> outputTokens) {
+        <span class="cls">registry</span>.<span class="fn">gauge</span>(<span class="str">"agent.tokens.input"</span>,
+            <span class="cls">Tags</span>.<span class="fn">of</span>(<span class="str">"agent"</span>, agentId), inputTokens);
+        <span class="cls">registry</span>.<span class="fn">gauge</span>(<span class="str">"agent.tokens.output"</span>,
+            <span class="cls">Tags</span>.<span class="fn">of</span>(<span class="str">"agent"</span>, agentId), outputTokens);
+    }
+}
+</div>
+
+                <div class="warn-box">
+                    <div class="label">&#9888;&#65039; 告警规则建议</div>
+                    <ul class="styled-list">
+                        <li><strong>P0 紧急</strong>：Agent 无响应超过 5 分钟，任务失败率 > 50%</li>
+                        <li><strong>P1 重要</strong>：任务平均延迟 > 30s，Token 消耗异常激增</li>
+                        <li><strong>P2 一般</strong>：Agent 利用率 < 10%（资源浪费），队列积压 > 100</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         <!-- 章节小结 -->
         <section class="section" id="summary">
             <h2 class="section-title">&#128214; 章节小结</h2>
@@ -1279,8 +1597,13 @@
                     <li><strong>框架对比</strong> — 根据项目需求和语言生态选择合适的框架</li>
                     <li><strong>自定义编排</strong> — Spring AI 提供了完全自定义的能力</li>
                     <li><strong>通信协议</strong> — 标准化消息格式和共享记忆是多 Agent 协作的基础</li>
+                    <li><strong>失败恢复</strong> — 指数退避重试、熔断降级、优雅降级，保障系统韧性</li>
+                    <li><strong>状态同步</strong> — 事件驱动的最终一致性，支持分布式 Agent 协作</li>
+                    <li><strong>分布式事务</strong> — Saga 模式保证多 Agent 流程的事务完整性</li>
+                    <li><strong>负载均衡</strong> — 轮询、加权轮询、最少连接等策略优化资源利用</li>
+                    <li><strong>监控告警</strong> — 任务级/Agent级/系统级/成本级指标全面覆盖</li>
                 </ul>
-                <p style="margin-top: 12px;">多 Agent 系统就像<strong>从"独狼"进化到"狼群"</strong> — 通过分工协作，完成单个 Agent 无法胜任的复杂任务。</p>
+                <p style="margin-top: 12px;">多 Agent 系统就像<strong>从"独狼"进化到"狼群"</strong> — 通过分工协作，完成单个 Agent 无法胜任的复杂任务。在生产环境中，失败恢复、状态同步、负载均衡和监控告警是保障系统可靠运行的关键基础设施。</p>
             </div>
         </section>
 

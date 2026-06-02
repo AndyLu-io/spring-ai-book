@@ -307,6 +307,14 @@
                 <a href="ch29-career-roadmap.html">第29章 职业路线</a>
                 <a href="ch30-frontier-trends.html" class="active">第30章 前沿趋势</a>
             </div>
+            <div class="nav-section">第八阶段：S级深度强化</div>
+            <div class="nav-links">
+                <a href="ch31-springai-internals.html">第31章 Spring AI 内部原理与源码剖析</a>
+                <a href="ch32-performance-benchmark.html">第32章 Agent 系统性能工程与基准测试</a>
+                <a href="ch33-framework-comparison.html">第33章 AI Agent 框架对比与选型指南</a>
+                <a href="ch34-observability.html">第34章 Agent 可观测性与监控体系</a>
+            </div>
+            </div>
             <a href="../springai-learning-map.html" class="nav-back">&#8592; 返回学习地图</a>
         </div>
     </nav>
@@ -317,7 +325,7 @@
         <p class="hero-subtitle">了解 AI Agent 领域的前沿趋势，掌握持续学习的策略与方法，为未来的技术演进做好准备</p>
         <div class="hero-meta">
             <span class="meta-item">&#9201; 预计 1-2 天</span>
-            <span class="meta-item">&#128214; 5 个知识点</span>
+            <span class="meta-item">&#128214; 6 个知识点</span>
             <span class="meta-item">&#127891; 所有级别</span>
         </div>
     </header>
@@ -341,7 +349,7 @@
             <div class="card">
                 <p>在本章结束后，你将能够：</p>
                 <ul class="styled-list">
-                    <li><strong>了解前沿趋势</strong> — 掌握 AI Agent 领域在模型、协议、工具链方面的最新发展方向</li>
+                    <li><strong>了解前沿趋势</strong> — 掌握 AI Agent 领域在模型、协议、工具链、可观测性方面的最新发展方向</li>
                     <li><strong>建立技术雷达</strong> — 学会搭建个人技术雷达，持续跟踪和评估新技术</li>
                     <li><strong>掌握学习策略</strong> — 建立高效的持续学习方法论，包括论文阅读、社区参与、开源贡献</li>
                     <li><strong>规划职业方向</strong> — 理解 AI Agent 架构师、AI 安全工程师等新兴职业方向</li>
@@ -627,18 +635,206 @@
 
             <div class="card">
                 <h3>A2A 协议：Agent 间的"HTTP"</h3>
-                <p>如果说 MCP 解决了 Agent 与工具之间的连接问题，那么 Google 推出的 <strong>A2A（Agent-to-Agent）协议</strong>则要解决 Agent 与 Agent 之间的通信问题。它的愿景是：让任何框架构建的 Agent 都能互相发现和协作。</p>
+                <p>如果说 MCP 解决了 Agent 与工具之间的连接问题，那么 Google 于 2025 年推出的 <strong>A2A（Agent-to-Agent）协议</strong>则要解决 Agent 与 Agent 之间的通信问题。它的愿景是：让任何框架、任何组织构建的 Agent 都能互相发现、通信和协作——就像 HTTP 让不同的网站能够互联互通一样。</p>
 
-                <ul class="styled-list">
-                    <li><strong>Agent Card</strong> — 每个 Agent 发布一个"名片"，描述自己的能力和接口（类似 OpenAPI Spec）</li>
-                    <li><strong>任务管理</strong> — 定义了创建、查询、取消 Agent 任务的标准接口</li>
-                    <li><strong>消息交换</strong> — 支持文本、文件、结构化数据的跨 Agent 传输</li>
-                    <li><strong>流式更新</strong> — 支持长时任务的实时进度推送</li>
-                </ul>
+                <h4>A2A 与 MCP 的互补关系</h4>
+                <p>MCP 和 A2A 不是竞争关系，而是解决不同层次问题的互补协议：</p>
+
+                <div class="diagram">
+<pre><span class="hl">MCP vs A2A 定位对比：</span>
+
+  ┌──────────────────────────────────────────────────────┐
+  │                   <span class="hl">应用层</span>                              │
+  │                                                      │
+  │   ┌──────────┐  <span class="hl">A2A</span>  ┌──────────┐                  │
+  │   │ Agent A  │ <span class="arr">&lt;────&gt;</span> │ Agent B  │  ← Agent 间通信  │
+  │   │ (你的)   │        │ (供应商) │    (跨组织协作)    │
+  │   └────┬─────┘        └────┬─────┘                  │
+  │        <span class="arr">|</span>                   <span class="arr">|</span>                        │
+  │   ┌────┴─────┐        ┌────┴─────┐                  │
+  │   │   MCP    │        │   MCP    │  ← Agent 与工具  │
+  │   │  Client  │        │  Client  │    (本地工具调用)  │
+  │   └────┬─────┘        └────┬─────┘                  │
+  │        <span class="arr">|</span>                   <span class="arr">|</span>                        │
+  │   ┌────┴─────┐        ┌────┴─────┐                  │
+  │   │ MCP 工具  │        │ MCP 工具  │                  │
+  │   │ DB/API/  │        │ Slack/   │                  │
+  │   │ 文件系统  │        │ Jira/... │                  │
+  │   └──────────┘        └──────────┘                  │
+  └──────────────────────────────────────────────────────┘
+
+  <span class="hl">MCP = Agent 的"手"</span>  — 让 Agent 调用工具、访问数据
+  <span class="hl">A2A = Agent 的"嘴"</span>  — 让 Agent 之间对话和协作</pre>
+                </div>
+
+                <h4>A2A 核心概念</h4>
+                <p>A2A 协议定义了三个核心概念，构成了 Agent 间通信的基础：</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>Agent Card（Agent 名片）</h4>
+                        <p>每个 Agent 都会发布一个 JSON 格式的"名片"，描述自己的身份、能力和接口。这类似于 Web 领域的 OpenAPI Spec，让其他 Agent 能够自动发现和理解如何与之交互。</p>
+                        <div class="code-block"><span class="cmt">// Agent Card 示例</span>
+{
+  <span class="str">"name"</span>: <span class="str">"财务分析 Agent"</span>,
+  <span class="str">"description"</span>: <span class="str">"提供财务报表分析和投资建议"</span>,
+  <span class="str">"url"</span>: <span class="str">"https://finance-agent.example.com"</span>,
+  <span class="str">"capabilities"</span>: {
+    <span class="str">"streaming"</span>: <span class="kw">true</span>,
+    <span class="str">"pushNotifications"</span>: <span class="kw">true</span>
+  },
+  <span class="str">"skills"</span>: [
+    { <span class="str">"name"</span>: <span class="str">"analyze-report"</span>,
+      <span class="str">"description"</span>: <span class="str">"分析财务报表"</span> },
+    { <span class="str">"name"</span>: <span class="str">"investment-advice"</span>,
+      <span class="str">"description"</span>: <span class="str">"提供投资建议"</span> }
+  ]
+}</div>
+                    </div>
+                    <div class="card">
+                        <h4>Task（任务）</h4>
+                        <p>Task 是 A2A 通信的核心单元。一个 Agent 可以向另一个 Agent 发起 Task，接收方处理后返回结果。Task 有完整的生命周期：创建、执行中、完成、失败、取消。</p>
+                        <div class="code-block"><span class="cmt">// Task 生命周期</span>
+┌──────────┐   发起   ┌──────────┐
+│  已提交   │ <span class="arr">──────&gt;</span> │  进行中   │
+│ submitted │         │ working  │
+└──────────┘         └────┬─────┘
+                          <span class="arr">|</span>
+               ┌──────────┼──────────┐
+               <span class="arr">v</span>          <span class="arr">v</span>          <span class="arr">v</span>
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │  已完成   │ │  已失败   │ │  已取消   │
+        │ completed│ │ failed   │ │ canceled │
+        └──────────┘ └──────────┘ └──────────┘</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>Message（消息）</h4>
+                    <p>Message 是 Task 内部的通信单元，支持多种内容类型。每个 Message 包含一个角色（user/agent）和多个 Part（文本、文件、结构化数据等），类似于多模态聊天中的消息格式。</p>
+                    <div class="code-block"><span class="cmt">// Message 结构</span>
+{
+  <span class="str">"role"</span>: <span class="str">"user"</span>,
+  <span class="str">"parts"</span>: [
+    { <span class="str">"type"</span>: <span class="str">"text"</span>,
+      <span class="str">"text"</span>: <span class="str">"请分析这份季度财报"</span> },
+    { <span class="str">"type"</span>: <span class="str">"file"</span>,
+      <span class="str">"file"</span>: { <span class="str">"name"</span>: <span class="str">"Q1-report.pdf"</span>,
+                <span class="str">"bytes"</span>: <span class="str">"base64..."</span> } }
+  ]
+}</div>
+                </div>
+
+                <h4>A2A 通信流程</h4>
+                <p>一个完整的 A2A 通信流程包含以下几个步骤：</p>
+
+                <div class="diagram">
+<pre><span class="hl">A2A 完整通信流程：</span>
+
+  <span class="hl">Agent A (调用方)</span>                    <span class="hl">Agent B (服务方)</span>
+  ──────────────                      ──────────────
+       <span class="arr">|</span>                                    <span class="arr">|</span>
+  ①   <span class="arr">|</span>──── GET /.well-known/agent.json ──&gt; <span class="arr">|</span>
+       <span class="arr">|</span>     (发现 Agent Card)              <span class="arr">|</span>
+  ②   <span class="arr">|</span>&lt;──── 返回 Agent Card ─────────────── <span class="arr">|</span>
+       <span class="arr">|</span>     (能力、技能、接口)              <span class="arr">|</span>
+       <span class="arr">|</span>                                    <span class="arr">|</span>
+  ③   <span class="arr">|</span>──── POST /tasks/send ──────────────&gt; <span class="arr">|</span>
+       <span class="arr">|</span>     (创建 Task + Message)           <span class="arr">|</span>
+  ④   <span class="arr">|</span>&lt;──── 返回 Task (status: working) ── <span class="arr">|</span>
+       <span class="arr">|</span>                                    <span class="arr">|</span>
+       <span class="arr">|</span>     ... Agent B 处理中 ...          <span class="arr">|</span>
+       <span class="arr">|</span>                                    <span class="arr">|</span>
+  ⑤   <span class="arr">|</span>──── GET /tasks/{id} ──────────────&gt; <span class="arr">|</span>
+       <span class="arr">|</span>     (轮询任务状态)                  <span class="arr">|</span>
+  ⑥   <span class="arr">|</span>&lt;──── 返回 Task (status: completed)  <span class="arr">|</span>
+       <span class="arr">|</span>     (包含结果 Message)              <span class="arr">|</span>
+       <span class="arr">|</span>                                    <span class="arr">|</span>
+       <span class="arr">v</span>                                    <span class="arr">v</span>
+
+  <span class="hl">或使用流式更新（SSE）：</span>
+  ③   <span class="arr">|</span>──── POST /tasks/send ──────────────&gt; <span class="arr">|</span>
+  ④   <span class="arr">|</span>&lt;──── SSE: status update ──────────── <span class="arr">|</span>
+  ⑤   <span class="arr">|</span>&lt;──── SSE: progress 30% ───────────── <span class="arr">|</span>
+  ⑥   <span class="arr">|</span>&lt;──── SSE: progress 70% ───────────── <span class="arr">|</span>
+  ⑦   <span class="arr">|</span>&lt;──── SSE: completed + result ────── <span class="arr">|</span></pre>
+                </div>
+
+                <h4>A2A vs MCP 全面对比</h4>
+                <table>
+                    <tr><th>维度</th><th>MCP</th><th>A2A</th></tr>
+                    <tr>
+                        <td><strong>发起方</strong></td>
+                        <td>Anthropic（2024）</td>
+                        <td>Google（2025）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>核心定位</strong></td>
+                        <td>Agent 与工具/数据源连接</td>
+                        <td>Agent 与 Agent 通信协作</td>
+                    </tr>
+                    <tr>
+                        <td><strong>类比</strong></td>
+                        <td>操作系统的设备驱动</td>
+                        <td>互联网的 HTTP 协议</td>
+                    </tr>
+                    <tr>
+                        <td><strong>通信模型</strong></td>
+                        <td>Client-Server（Agent 调用工具）</td>
+                        <td>Peer-to-Peer（Agent 间对等协作）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>发现机制</strong></td>
+                        <td>配置文件声明 Server</td>
+                        <td>Agent Card 自描述 + 发现</td>
+                    </tr>
+                    <tr>
+                        <td><strong>核心概念</strong></td>
+                        <td>Tool、Resource、Prompt</td>
+                        <td>Agent Card、Task、Message</td>
+                    </tr>
+                    <tr>
+                        <td><strong>状态管理</strong></td>
+                        <td>无状态（请求-响应）</td>
+                        <td>有状态（Task 生命周期）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>流式支持</strong></td>
+                        <td>SSE 传输</td>
+                        <td>SSE + Push Notification</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Spring AI 支持</strong></td>
+                        <td>已原生集成（MCP Client/Server）</td>
+                        <td>规划中，预计 2025 年底支持</td>
+                    </tr>
+                    <tr>
+                        <td><strong>成熟度</strong></td>
+                        <td>快速成熟，生态丰富</td>
+                        <td>早期阶段，生态建设中</td>
+                    </tr>
+                </table>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; Spring AI 中 A2A 的集成展望</div>
+                    <p>Spring AI 的设计哲学是<strong>"协议驱动、框架无关"</strong>。A2A 协议的集成路径已经清晰：</p>
+                    <ul class="styled-list">
+                        <li><strong>A2A Client</strong> — 类似 MCP Client，Spring AI 将提供 <code>A2aClient</code>，让你的 Agent 能够发现和调用其他 Agent</li>
+                        <li><strong>A2A Server</strong> — 通过 <code>@A2aAgent</code> 注解，将 Spring Bean 暴露为可被其他 Agent 调用的服务</li>
+                        <li><strong>与 MCP 协同</strong> — 一个 Spring AI Agent 可以同时作为 MCP Client（调用本地工具）和 A2A Client/Server（与其他 Agent 协作）</li>
+                        <li><strong>自动注册</strong> — Agent Card 可以从 Spring AI 的配置和 Bean 定义中自动生成，无需手动维护</li>
+                    </ul>
+                </div>
 
                 <div class="warn-box">
-                    <div class="label">&#9888;&#65039; 当前状态</div>
-                    <p>A2A 协议仍处于早期阶段（2025 年发布），生态尚未成熟。但它是 Google + 50+ 合作伙伴共同推进的开放标准，值得持续关注。建议在架构设计时预留 A2A 集成的可能性。</p>
+                    <div class="label">&#9888;&#65039; 当前状态与建议</div>
+                    <p>A2A 协议仍处于早期阶段（2025 年发布），生态尚未成熟。但它是 Google + Salesforce、SAP、LangChain 等 50+ 合作伙伴共同推进的开放标准，值得持续关注。建议：</p>
+                    <ul class="styled-list">
+                        <li><strong>架构预留</strong> — 在系统设计时预留 Agent 间通信的接口层，避免未来重构</li>
+                        <li><strong>关注 Spring AI 动态</strong> — Spring AI 社区已经在讨论 A2A 集成方案，跟进官方进展</li>
+                        <li><strong>POC 验证</strong> — 用 Google 提供的 A2A SDK 搭建简单的 Agent 通信 Demo，积累实践经验</li>
+                        <li><strong>安全优先</strong> — 跨组织 Agent 协作必须考虑身份认证、权限控制和数据隔离</li>
+                    </ul>
                 </div>
             </div>
 
@@ -694,9 +890,334 @@
             </div>
         </section>
 
-        <!-- 核心内容 4：持续学习策略 -->
+        <!-- 核心内容 4：Agent 可观测性 -->
         <section class="section" id="content-4">
-            <h2 class="section-title">&#128196; 第四节：持续学习策略</h2>
+            <h2 class="section-title">&#128196; 第四节：Agent 可观测性</h2>
+
+            <div class="card">
+                <h3>为什么 Agent 需要可观测性？</h3>
+                <p>传统微服务的可观测性已经很成熟——请求链路追踪、指标监控、日志聚合。但 Agent 系统引入了新的复杂性：<strong>LLM 调用是非确定性的</strong>（同样的输入可能产生不同的输出），<strong>Agent 执行链路是动态的</strong>（每次执行可能调用不同的工具、走不同的路径），<strong>成本是不可预测的</strong>（token 消耗随任务复杂度剧烈波动）。</p>
+                <p>没有可观测性的 Agent 系统就像没有仪表盘的飞机——你不知道它在做什么、做得怎么样、什么时候会出问题。在生产环境中，可观测性不是"锦上添花"，而是<strong>生存必需</strong>。</p>
+
+                <div class="diagram">
+<pre><span class="hl">Agent 可观测性 vs 传统可观测性：</span>
+
+  ┌───────────────────────────────────────────────────────┐
+  │                <span class="hl">传统微服务可观测性</span>                     │
+  │                                                       │
+  │  请求 ──&gt; Service A ──&gt; Service B ──&gt; DB ──&gt; 响应   │
+  │  (固定的、可预测的调用链路)                             │
+  └───────────────────────────────────────────────────────┘
+
+  ┌───────────────────────────────────────────────────────┐
+  │                <span class="hl">Agent 可观测性</span>                        │
+  │                                                       │
+  │  用户输入 ──&gt; LLM 推理 ──&gt; 工具调用? ──&gt; 再推理?    │
+  │       <span class="arr">|</span>            <span class="arr">|</span>           <span class="arr">|</span>          <span class="arr">|</span>        │
+  │       <span class="arr">v</span>            <span class="arr">v</span>           <span class="arr">v</span>          <span class="arr">v</span>        │
+  │  [Token 消耗]  [推理延迟]   [工具结果]  [质量评估]    │
+  │                                                       │
+  │  (动态的、非确定性的执行路径 + LLM 特有指标)           │
+  └───────────────────────────────────────────────────────┘</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>可观测性三大支柱</h3>
+                <p>Agent 可观测性建立在经典的三大支柱之上，但每个支柱都需要针对 Agent 场景进行扩展：</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>1. Tracing（追踪）</h4>
+                        <p>记录 Agent 从接收请求到返回结果的完整执行链路。与传统分布式追踪不同，Agent 追踪需要捕获：</p>
+                        <ul class="styled-list">
+                            <li><strong>LLM 调用链</strong> — 每次模型推理的输入、输出、耗时、token 消耗</li>
+                            <li><strong>工具调用链</strong> — 哪个工具被调用、参数是什么、返回了什么</li>
+                            <li><strong>推理决策</strong> — Agent 为什么选择了这个工具/路径（可选，需要模型支持）</li>
+                            <li><strong>多 Agent 路径</strong> — 跨 Agent 的调用关系和数据流转</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>2. Metrics（指标）</h4>
+                        <p>量化的 Agent 运行数据，用于监控和告警。Agent 特有的关键指标：</p>
+                        <ul class="styled-list">
+                            <li><strong>Token 使用量</strong> — 输入/输出 token 数、总消耗、成本估算</li>
+                            <li><strong>延迟分布</strong> — 首 token 延迟（TTFT）、端到端延迟、P50/P95/P99</li>
+                            <li><strong>成功率</strong> — 任务完成率、工具调用成功率、重试率</li>
+                            <li><strong>质量指标</strong> — 用户满意度、回答准确率、幻觉率</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>3. Logging（日志）</h4>
+                    <p>结构化的事件记录，用于问题排查和审计。Agent 日志需要包含：</p>
+                    <ul class="styled-list">
+                        <li><strong>完整对话历史</strong> — 每轮对话的输入输出，用于回溯问题</li>
+                        <li><strong>工具调用详情</strong> — 请求参数、响应内容、错误信息</li>
+                        <li><strong>安全审计</strong> — 权限检查、敏感操作、异常行为</li>
+                        <li><strong>成本记录</strong> — 每次请求的 token 消耗和费用</li>
+                    </ul>
+                </div>
+
+                <div class="diagram">
+<pre><span class="hl">三大支柱协作关系：</span>
+
+  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+  │   <span class="hl">Tracing</span>    │    │   <span class="hl">Metrics</span>    │    │   <span class="hl">Logging</span>    │
+  │              │    │              │    │              │
+  │ "发生了什么"  │    │ "表现如何"    │    │ "为什么发生"  │
+  │              │    │              │    │              │
+  │ 请求链路     │    │ 延迟/吞吐    │    │ 完整上下文    │
+  │ Span 树     │    │ Token 消耗   │    │ 错误堆栈     │
+  │ 关联关系     │    │ 成功率/成本  │    │ 审计记录     │
+  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘
+         <span class="arr">|</span>                   <span class="arr">|</span>                   <span class="arr">|</span>
+         └───────────────────┼───────────────────┘
+                             <span class="arr">v</span>
+                    ┌──────────────────┐
+                    │   <span class="hl">统一可观测平台</span>  │
+                    │  (Grafana/Jaeger) │
+                    └──────────────────┘</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>OpenTelemetry：统一的可观测标准</h3>
+                <p><strong>OpenTelemetry（OTel）</strong>是 CNCF 的可观测性标准项目，提供了统一的 API、SDK 和工具链来收集 Traces、Metrics 和 Logs。Spring 生态与 OTel 有深度集成——<strong>Spring Boot 3.x 已原生支持 OTel</strong>。</p>
+
+                <h4>Spring AI + OpenTelemetry 集成</h4>
+                <div class="code-block"><span class="cmt">// 1. 添加依赖</span>
+&lt;dependency&gt;
+    &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+    &lt;artifactId&gt;micrometer-tracing-bridge-otel&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.opentelemetry&lt;/groupId&gt;
+    &lt;artifactId&gt;opentelemetry-exporter-otlp&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+<span class="cmt">// 2. 配置 application.yml</span>
+management:
+  tracing:
+    sampling:
+      probability: <span class="str">1.0</span>
+  otlp:
+    tracing:
+      endpoint: <span class="str">http://otel-collector:4318/v1/traces</span>
+
+<span class="cmt">// 3. Spring AI 自动埋点（已内置支持）</span>
+<span class="cmt">// ChatClient 调用会自动创建 Span：</span>
+<span class="cmt">//   - ai.chat.client  — 整体请求</span>
+<span class="cmt">//   - ai.chat.client.prompt   — Prompt 构建</span>
+<span class="cmt">//   - ai.chat.client.completion — 模型调用</span>
+<span class="cmt">//   - ai.tool.call     — 工具调用（如有）</span></div>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; Spring AI 的自动埋点</div>
+                    <p>Spring AI 内置了对 ChatClient、模型调用、工具调用的自动埋点。你只需要配置 OTel 导出器，就能获得完整的 Agent 执行链路追踪，无需手动添加任何追踪代码。这得益于 Spring Boot 3 的 Micrometer Tracing 抽象层。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Agent 追踪工具链</h3>
+                <p>除了底层的 OpenTelemetry，还有专门针对 LLM/Agent 场景的追踪工具，提供了更丰富的可视化和分析能力：</p>
+
+                <table>
+                    <tr><th>工具</th><th>定位</th><th>核心能力</th><th>Spring AI 集成</th></tr>
+                    <tr>
+                        <td><strong>LangSmith</strong></td>
+                        <td>LangChain 官方平台</td>
+                        <td>调试、评估、监控 LLM 应用</td>
+                        <td>通过 OTel 桥接</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LangFuse</strong></td>
+                        <td>开源 LLM 可观测平台</td>
+                        <td>追踪、评估、提示管理、数据集</td>
+                        <td>OTel 原生支持</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Arize Phoenix</strong></td>
+                        <td>开源 LLM 可观测</td>
+                        <td>追踪、评估、RAG 分析</td>
+                        <td>OTel + 自定义</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Langwatch</strong></td>
+                        <td>LLM 质量监控</td>
+                        <td>对话质量、安全检测、成本分析</td>
+                        <td>API 集成</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Grafana + Tempo</strong></td>
+                        <td>通用可观测平台</td>
+                        <td>分布式追踪、指标、日志关联</td>
+                        <td>OTel 原生</td>
+                    </tr>
+                </table>
+
+                <h4>Agent 执行链路可视化示例</h4>
+                <div class="diagram">
+<pre><span class="hl">一次 Agent 请求的完整追踪（Span 树）：</span>
+
+  <span class="hl">ai.chat.client</span> [total: 2.3s, tokens: 1,847]
+  ├── <span class="hl">ai.chat.client.prompt</span> [12ms]
+  │   └── system prompt + 3 messages assembled
+  ├── <span class="hl">ai.chat.client.completion</span> [1.8s, tokens: 1,203]
+  │   ├── model: gpt-4o
+  │   ├── input_tokens: 856
+  │   └── output_tokens: 347
+  ├── <span class="hl">ai.tool.call</span> [420ms]
+  │   ├── tool: database_query
+  │   ├── input: {"sql": "SELECT ..."}
+  │   └── output: {"rows": 42}
+  └── <span class="hl">ai.chat.client.completion</span> [580ms, tokens: 644]
+      ├── model: gpt-4o
+      ├── input_tokens: 512
+      └── output_tokens: 132
+
+  <span class="hl">总览：</span>
+  ├── 总耗时: 2.3s
+  ├── LLM 调用: 2 次 (2.38s)
+  ├── 工具调用: 1 次 (420ms)
+  ├── Token 消耗: 1,847 (input: 1,368, output: 479)
+  └── 预估成本: $0.012</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>自定义指标设计</h3>
+                <p>除了自动埋点提供的标准指标，Agent 系统通常需要自定义业务指标来衡量质量和效果：</p>
+
+                <div class="code-block"><span class="cmt">// 使用 Micrometer 定义 Agent 自定义指标</span>
+<span class="ann">@Component</span>
+<span class="kw">public class</span> <span class="cls">AgentMetrics</span> {
+
+    <span class="kw">private final</span> <span class="cls">MeterRegistry</span> registry;
+
+    <span class="cmt">// 任务完成率</span>
+    <span class="kw">public void</span> <span class="fn">recordTaskResult</span>(<span class="cls">String</span> agentName,
+                                  <span class="cls">String</span> result) {
+        <span class="cls">Counter</span>.builder(<span class="str">"agent.task.total"</span>)
+            .tag(<span class="str">"agent"</span>, agentName)
+            .tag(<span class="str">"result"</span>, result)  <span class="cmt">// success/failure/timeout</span>
+            .register(registry)
+            .increment();
+    }
+
+    <span class="cmt">// Token 消耗追踪</span>
+    <span class="kw">public void</span> <span class="fn">recordTokenUsage</span>(<span class="cls">String</span> model,
+                                  <span class="kw">long</span> inputTokens,
+                                  <span class="kw">long</span> outputTokens) {
+        <span class="cls">DistributionSummary</span>.builder(<span class="str">"agent.tokens"</span>)
+            .tag(<span class="str">"model"</span>, model)
+            .tag(<span class="str">"type"</span>, <span class="str">"input"</span>)
+            .register(registry)
+            .record(inputTokens);
+        <span class="cls">DistributionSummary</span>.builder(<span class="str">"agent.tokens"</span>)
+            .tag(<span class="str">"model"</span>, model)
+            .tag(<span class="str">"type"</span>, <span class="str">"output"</span>)
+            .register(registry)
+            .record(outputTokens);
+    }
+
+    <span class="cmt">// 工具调用延迟</span>
+    <span class="kw">public void</span> <span class="fn">recordToolLatency</span>(<span class="cls">String</span> toolName,
+                                   <span class="kw">long</span> latencyMs) {
+        <span class="cls">Timer</span>.builder(<span class="str">"agent.tool.latency"</span>)
+            .tag(<span class="str">"tool"</span>, toolName)
+            .publishPercentiles(0.5, 0.95, 0.99)
+            .register(registry)
+            .record(<span class="cls">Duration</span>.ofMillis(latencyMs));
+    }
+}</div>
+
+                <h4>关键监控看板设计</h4>
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>实时监控面板</h4>
+                        <ul class="styled-list">
+                            <li><strong>请求量 QPS</strong> — Agent 当前负载</li>
+                            <li><strong>P99 延迟</strong> — 响应是否超时</li>
+                            <li><strong>错误率</strong> — 任务失败趋势</li>
+                            <li><strong>Token 消耗/分钟</strong> — 成本实时估算</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>质量分析面板</h4>
+                        <ul class="styled-list">
+                            <li><strong>任务完成率</strong> — Agent 解决问题的能力</li>
+                            <li><strong>工具调用成功率</strong> — 工具可靠性</li>
+                            <li><strong>平均对话轮次</strong> — 效率指标</li>
+                            <li><strong>用户满意度</strong> — 质量反馈闭环</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>可观测性架构设计</h3>
+                <p>一个完整的 Agent 可观测性架构应该将三大支柱统一到一个平台中，实现从宏观到微观的逐层下钻：</p>
+
+                <div class="diagram">
+<pre><span class="hl">Agent 可观测性架构：</span>
+
+  ┌─────────────────────────────────────────────────────────┐
+  │                    <span class="hl">Agent 应用层</span>                        │
+  │                                                         │
+  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
+  │  │ Spring AI │  │ Spring AI │  │ Spring AI │              │
+  │  │  Agent A  │  │  Agent B  │  │  Agent C  │              │
+  │  └─────┬────┘  └─────┬────┘  └─────┬────┘              │
+  │        <span class="arr">|</span>              <span class="arr">|</span>              <span class="arr">|</span>                  │
+  │        └──────────────┼──────────────┘                  │
+  │                       <span class="arr">|</span>                                  │
+  │              Micrometer Tracing (OTel Bridge)           │
+  └───────────────────────┼─────────────────────────────────┘
+                          <span class="arr">|</span>
+  ┌───────────────────────┼─────────────────────────────────┐
+  │                    <span class="hl">OTel Collector</span>                      │
+  │          (接收 + 处理 + 路由 + 导出)                     │
+  └───────┬───────────────┼───────────────┬─────────────────┘
+          <span class="arr">|</span>               <span class="arr">|</span>               <span class="arr">|</span>
+  ┌───────┴──────┐ ┌──────┴──────┐ ┌──────┴──────┐
+  │   <span class="hl">Traces</span>    │ │  <span class="hl">Metrics</span>   │ │   <span class="hl">Logs</span>     │
+  │              │ │             │ │             │
+  │  Jaeger /    │ │  Prometheus │ │  Loki /     │
+  │  Tempo       │ │  / Mimir    │ │  ELK        │
+  └───────┬──────┘ └──────┬──────┘ └──────┬──────┘
+          <span class="arr">|</span>               <span class="arr">|</span>               <span class="arr">|</span>
+          └───────────────┼───────────────┘
+                          <span class="arr">v</span>
+                 ┌──────────────────┐
+                 │    <span class="hl">Grafana</span>       │
+                 │                  │
+                 │  ┌────────────┐  │
+                 │  │ Agent 总览  │  │
+                 │  │ 请求追踪   │  │
+                 │  │ 成本分析   │  │
+                 │  │ 质量报表   │  │
+                 │  │ 告警规则   │  │
+                 │  └────────────┘  │
+                 └──────────────────┘</pre>
+                </div>
+
+                <div class="info-box">
+                    <div class="label">&#128161; 实践建议</div>
+                    <ul class="styled-list">
+                        <li><strong>从小开始</strong> — 先用 Spring AI 内置的 Micrometer 埋点 + OTel 导出到 Jaeger/Grafana，验证价值后再扩展</li>
+                        <li><strong>成本先行</strong> — Token 消耗和成本追踪是最容易量化的价值点，优先实现</li>
+                        <li><strong>采样策略</strong> — 生产环境不要 100% 采样，用概率采样（如 10%）平衡成本和可观测性</li>
+                        <li><strong>告警设计</strong> — 设置 Token 消耗异常、延迟飙升、错误率上升的告警规则，实现主动发现问题</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心内容 5：持续学习策略 -->
+        <section class="section" id="content-5">
+            <h2 class="section-title">&#128196; 第五节：持续学习策略</h2>
 
             <div class="card">
                 <h3>技术雷达：你的导航仪</h3>
@@ -924,6 +1445,51 @@
             </div>
         </section>
 
+        <!-- 2026下半年技术预判 -->
+        <section class="section" id="predictions-2026h2">
+            <h2 class="section-title">&#128216; 2026下半年技术预判</h2>
+
+            <div class="info-box">
+                <strong>&#128302; 2026下半年技术预判</strong>
+                <p>基于当前技术发展趋势，我们对2026下半年做出以下预判：</p>
+            </div>
+
+            <div class="card">
+                <h3>1. Agent标准化协议成熟</h3>
+                <p><strong>预判</strong>：MCP和A2A协议将在2026下半年达到稳定版本，成为Agent间通信的事实标准。</p>
+                <p><strong>依据</strong>：Google、Microsoft、Anthropic等主要厂商已达成初步共识，协议草案正在快速迭代。</p>
+                <p><strong>影响</strong>：开发者可以更轻松地构建跨平台、跨组织的Agent系统。</p>
+            </div>
+
+            <div class="card">
+                <h3>2. 多模态Agent成为标配</h3>
+                <p><strong>预判</strong>：到2026年底，80%的新建Agent项目将原生支持多模态输入（图像、语音、视频）。</p>
+                <p><strong>依据</strong>：GPT-5、Claude 4等下一代模型将原生支持多模态，推理成本大幅下降。</p>
+                <p><strong>影响</strong>：纯文本Agent将逐渐被淘汰，多模态成为基础能力。</p>
+            </div>
+
+            <div class="card">
+                <h3>3. Agent安全框架标准化</h3>
+                <p><strong>预判</strong>：主要云厂商将推出标准化的Agent安全框架，包括内容过滤、权限控制、审计日志。</p>
+                <p><strong>依据</strong>：EU AI Act和中国《生成式AI服务管理暂行办法》的实施推动了合规需求。</p>
+                <p><strong>影响</strong>：企业级Agent部署的合规门槛将显著降低。</p>
+            </div>
+
+            <div class="card">
+                <h3>4. 边缘Agent兴起</h3>
+                <p><strong>预判</strong>：随着小模型（<7B参数）性能提升，边缘设备上的Agent应用将快速增长。</p>
+                <p><strong>依据</strong>：Apple Intelligence、Google Gemini Nano等端侧模型的推出。</p>
+                <p><strong>影响</strong>：隐私敏感场景（医疗、金融）的Agent应用将爆发。</p>
+            </div>
+
+            <div class="card">
+                <h3>5. Agent即服务（AaaS）模式普及</h3>
+                <p><strong>预判</strong>：到2026年底，主流SaaS平台将提供Agent即服务功能，用户可通过配置快速创建专用Agent。</p>
+                <p><strong>依据</strong>：Salesforce Einstein、Microsoft Copilot等产品的成功验证了商业模式。</p>
+                <p><strong>影响</strong>：低代码/无代码Agent开发平台将成为新蓝海。</p>
+            </div>
+        </section>
+
         <!-- 章节小结 -->
         <section class="section" id="summary">
             <h2 class="section-title">&#128214; 章节小结</h2>
@@ -933,6 +1499,7 @@
                     <li><strong>Agent 技术趋势</strong> — Computer Use、自主 Agent、安全防御、跨组织协作，Agent 正从工具走向"数字同事"</li>
                     <li><strong>模型发展趋势</strong> — 推理模型让 AI 学会深思，多模态让 AI 看到世界，小模型让 AI 走进边缘</li>
                     <li><strong>协议与工具链</strong> — MCP 成为工具连接标准，A2A 开启 Agent 互操作，框架生态日趋成熟</li>
+                    <li><strong>Agent 可观测性</strong> — 三大支柱（Tracing/Metrics/Logging）+ OpenTelemetry + 自定义指标，让 Agent 系统"看得见、管得住"</li>
                     <li><strong>持续学习策略</strong> — 技术雷达帮你导航，论文阅读帮你深入，社区参与帮你成长</li>
                     <li><strong>Spring AI 展望</strong> — 协议驱动、企业级、可观测，Spring AI 是 Java 开发者进入 AI Agent 领域的最佳路径</li>
                 </ul>
@@ -962,13 +1529,19 @@
                 </p>
             </div>
             <div class="interview-box">
-                <div class="label">&#128104;&#8205;&#128187; Q3: 你会如何构建个人技术雷达来跟踪 AI 领域的快速变化？</div>
+                <div class="label">&#128104;&#8205;&#128187; Q3: 如何为 Agent 系统设计可观测性方案？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>回答要点：</strong>Agent 可观测性建立在<strong>三大支柱</strong>之上：1) <strong>Tracing</strong>——用 OpenTelemetry 记录完整的 Agent 执行链路（LLM 调用、工具调用、推理决策），Spring AI 内置了 Micrometer 埋点支持；2) <strong>Metrics</strong>——监控 Token 消耗、延迟分布（TTFT/P99）、任务成功率、成本估算等 Agent 特有指标；3) <strong>Logging</strong>——结构化记录完整对话历史、工具调用详情和安全审计。架构上推荐 <strong>OTel Collector + Grafana</strong> 的开源方案，通过 Micrometer Tracing Bridge 与 Spring Boot 3 原生集成。关键实践：成本先行（Token 消耗最容易量化价值）、概率采样控制存储成本、设置告警规则实现主动发现问题。
+                </p>
+            </div>
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q4: 你会如何构建个人技术雷达来跟踪 AI 领域的快速变化？</div>
                 <p style="margin-top: 8px; color: var(--text-secondary);">
                     <strong>回答要点：</strong>1) <strong>信息源分层</strong>——高质量源（论文、官方博客）+ 中等质量源（技术社区、Newsletter）+ 广播源（社交媒体）；2) <strong>定期评审</strong>——每季度对技术雷达进行更新，将新技术分类到采纳/试验/评估/暂缓四个象限；3) <strong>实践验证</strong>——对"试验"象限的技术进行 POC 验证，用实际数据评估是否值得投入；4) <strong>分享输出</strong>——写技术博客或内部分享，倒逼自己深入理解。重点是<strong>有节奏地跟踪</strong>，而不是焦虑地追逐每一个热点。
                 </p>
             </div>
             <div class="interview-box">
-                <div class="label">&#128104;&#8205;&#128187; Q4: 对比推理模型（o1/o3）和传统 LLM，它们各自适合什么场景？</div>
+                <div class="label">&#128104;&#8205;&#128187; Q5: 对比推理模型（o1/o3）和传统 LLM，它们各自适合什么场景？</div>
                 <p style="margin-top: 8px; color: var(--text-secondary);">
                     <strong>回答要点：</strong>传统 LLM（如 GPT-4、Claude Sonnet）适合<strong>高吞吐、低延迟</strong>的场景：简单问答、文本生成、快速分类、客服对话。推理模型（如 o1、o3、Claude with Extended Thinking）适合<strong>高复杂度、高质量</strong>的场景：数学证明、复杂代码调试、多步规划、科研分析。在架构层面，建议采用<strong>模型路由</strong>策略：先用简单模型判断任务复杂度，简单任务直接响应，复杂任务路由到推理模型，以平衡成本和质量。
                 </p>
@@ -1001,6 +1574,18 @@
                     <li>找到一个标记为 "good first issue" 的 issue</li>
                     <li>完成修复并提交你的第一个 Pull Request</li>
                     <li>记录整个过程中的学习心得</li>
+                </ul>
+            </div>
+            <div class="try-box">
+                <div class="label">&#9997;&#65039; 练习 4: 搭建 Agent 可观测性平台</div>
+                <p>为一个 Spring AI Agent 项目搭建完整的可观测性方案：</p>
+                <ul class="styled-list">
+                    <li>添加 Micrometer Tracing + OTel 依赖，配置 OTel Collector 导出到本地 Jaeger</li>
+                    <li>编写一个简单的 ChatClient 调用，验证自动生成的 Span 链路是否完整</li>
+                    <li>使用 Micrometer 自定义指标：记录 Token 消耗、工具调用延迟、任务完成率</li>
+                    <li>在 Grafana 中创建 Dashboard，展示请求量、延迟分布、Token 消耗趋势</li>
+                    <li>设置一条告警规则：当 P99 延迟超过 5 秒时触发通知</li>
+                    <li>对比有无可观测性时的调试效率差异，写下你的体会</li>
                 </ul>
             </div>
         </section>

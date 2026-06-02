@@ -325,6 +325,14 @@
                 <a href="ch29-career-roadmap.html">第29章 职业路线</a>
                 <a href="ch30-frontier-trends.html">第30章 前沿趋势</a>
             </div>
+            </div>
+            <div class="nav-section">第八阶段：S级深度强化</div>
+            <div class="nav-links">
+                <a href="ch31-springai-internals.html">第31章 Spring AI 内部原理与源码剖析</a>
+                <a href="ch32-performance-benchmark.html">第32章 Agent 系统性能工程与基准测试</a>
+                <a href="ch33-framework-comparison.html">第33章 AI Agent 框架对比与选型指南</a>
+                <a href="ch34-observability.html">第34章 Agent 可观测性与监控体系</a>
+            </div>
             <a href="../springai-learning-map.html" class="nav-back">&#8592; 返回学习地图</a>
         </div>
     </nav>
@@ -414,6 +422,16 @@
                             <span class="tag">任务规划</span>
                         </div>
                     </div>
+                    <div class="card" style="border-color: var(--success);">
+                        <h3 style="font-size: 0.95rem; color: var(--success);">案例 7：企业级智能客服（生产级）</h3>
+                        <p>监控 + 限流熔断 + 灰度发布 + CI/CD</p>
+                        <div class="tags">
+                            <span class="tag">OpenTelemetry</span>
+                            <span class="tag">Sentinel</span>
+                            <span class="tag">灰度发布</span>
+                            <span class="tag">K8s</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -429,6 +447,8 @@
                     <li><strong>部署方案</strong> -- Docker + 云部署配置</li>
                     <li><strong>扩展优化方向</strong> -- 进阶改进思路</li>
                     <li><strong>项目难点与解决方案</strong> -- 避坑指南</li>
+                    <li><strong>踩坑复盘</strong> -- 真实开发中遇到的问题和教训</li>
+                    <li><strong>生产级补充（案例7）</strong> -- 监控、限流熔断、灰度发布、CI/CD 流水线</li>
                 </ul>
             </div>
         </section>
@@ -1681,24 +1701,6 @@ Step 5: 向用户汇报："已完成！报告已发送给经理。"
             </div>
         </section>
 
-        <!-- 章节小结 -->
-        <section class="section" id="summary">
-            <h2 class="section-title">&#128214; 章节小结</h2>
-            <div class="card">
-                <p>本章通过 6 个完整的实战项目，展示了 Spring AI 的强大能力：</p>
-                <ul class="styled-list">
-                    <li><strong>智能客服</strong> -- RAG + Chat Memory + 意图分类，构建有记忆的客服机器人</li>
-                    <li><strong>文档分析</strong> -- 文档解析 + 向量化 + RAG 问答，让文档"开口说话"</li>
-                    <li><strong>代码助手</strong> -- Function Calling + 结构化输出，AI 辅助代码审查和生成</li>
-                    <li><strong>数据分析</strong> -- Text-to-SQL + 图表生成，用自然语言查询数据</li>
-                    <li><strong>翻译平台</strong> -- 流式翻译 + 术语管理，专业级翻译系统</li>
-                    <li><strong>AI Agent</strong> -- 多 Agent 协作 + 任务编排，自动化复杂工作流</li>
-                </ul>
-                <p style="margin-top: 12px;">每个项目都遵循<strong>从 0 到 1</strong>的完整开发流程：需求分析 → 架构设计 → 技术选型 → 核心代码 → 测试 → 部署 → 优化。这就是将理论知识转化为实际产品的方法论。</p>
-                <p style="margin-top: 8px;">记住：<strong>最好的学习方式是动手实践</strong>。选择一个你感兴趣的项目，从头到尾实现一遍，遇到问题再回来查文档。这就是从"知道"到"掌握"的跨越。</p>
-            </div>
-        </section>
-
         <!-- 案例七：企业级智能客服平台（生产级） -->
         <section class="section" id="enterprise-cs">
             <h2 class="section-title">&#127970; 案例七：企业级智能客服平台（生产级）</h2>
@@ -2510,6 +2512,25 @@ jobs:
                     <li><strong>联邦学习</strong>：多租户数据隔离下的模型协同训练</li>
                     <li><strong>成本看板</strong>：实时统计各租户的 Token 消耗和费用</li>
                 </ul>
+            </div>
+        </section>
+
+        <!-- 章节小结 -->
+        <section class="section" id="summary">
+            <h2 class="section-title">&#128214; 章节小结</h2>
+            <div class="card">
+                <p>本章通过 7 个完整的实战项目（含 1 个生产级系统），展示了 Spring AI 的强大能力：</p>
+                <ul class="styled-list">
+                    <li><strong>智能客服</strong> -- RAG + Chat Memory + 意图分类，构建有记忆的客服机器人</li>
+                    <li><strong>文档分析</strong> -- 文档解析 + 向量化 + RAG 问答，让文档"开口说话"</li>
+                    <li><strong>代码助手</strong> -- Function Calling + 结构化输出，AI 辅助代码审查和生成</li>
+                    <li><strong>数据分析</strong> -- Text-to-SQL + 图表生成，用自然语言查询数据</li>
+                    <li><strong>翻译平台</strong> -- 流式翻译 + 术语管理，专业级翻译系统</li>
+                    <li><strong>AI Agent</strong> -- 多 Agent 协作 + 任务编排，自动化复杂工作流</li>
+                    <li><strong>企业级智能客服（生产级）</strong> -- 监控可观测性 + 限流熔断 + 灰度发布 + CI/CD，从开发到运维的全链路实战</li>
+                </ul>
+                <p style="margin-top: 12px;">每个项目都遵循<strong>从 0 到 1</strong>的完整开发流程：需求分析 → 架构设计 → 技术选型 → 核心代码 → 测试 → 部署 → 优化。案例 7 更进一步，展示了真实生产环境中的关键关注点。这就是将理论知识转化为实际产品的方法论。</p>
+                <p style="margin-top: 8px;">记住：<strong>最好的学习方式是动手实践</strong>。选择一个你感兴趣的项目，从头到尾实现一遍，遇到问题再回来查文档。这就是从"知道"到"掌握"的跨越。</p>
             </div>
         </section>
 

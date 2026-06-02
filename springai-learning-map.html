@@ -478,6 +478,7 @@
         .phase-badge.phase-5 { background: rgba(16, 185, 129, 0.2); color: #34d399; }
         .phase-badge.phase-6 { background: rgba(240, 147, 251, 0.2); color: #f0abfc; }
         .phase-badge.phase-7 { background: rgba(250, 112, 154, 0.2); color: #fb7185; }
+        .phase-badge.phase-8 { background: rgba(234, 179, 8, 0.2); color: #facc15; }
 
         .grid-3 {
             display: grid;
@@ -495,6 +496,290 @@
         .footer a {
             color: var(--primary-light);
             text-decoration: none;
+        }
+
+        /* 主题索引样式 */
+        .phase-badge.phase-index { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+
+        .index-search {
+            margin-bottom: 24px;
+        }
+
+        .index-search input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .index-search input:focus {
+            border-color: var(--primary);
+        }
+
+        .index-search input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .topic-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .topic-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .topic-card h3 {
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .topic-card h3::after {
+            content: '\25BC';
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .topic-card.expanded h3::after {
+            transform: rotate(180deg);
+        }
+
+        .topic-card .topic-count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .topic-chapters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.2s ease;
+            opacity: 0;
+        }
+
+        .topic-card.expanded .topic-chapters {
+            max-height: 300px;
+            opacity: 1;
+        }
+
+        .topic-chapters a {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-light);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .topic-chapters a:hover {
+            background: rgba(99, 102, 241, 0.25);
+        }
+
+        .topic-no-result {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* 更新记录样式 */
+        .phase-badge.phase-changelog { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+
+        .changelog-timeline {
+            position: relative;
+            padding-left: 32px;
+            margin-top: 24px;
+        }
+
+        .changelog-timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .changelog-item {
+            position: relative;
+            margin-bottom: 32px;
+            padding-left: 24px;
+        }
+
+        .changelog-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 2px solid var(--bg-dark);
+        }
+
+        .changelog-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .changelog-version {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .changelog-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .changelog-content h4 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .changelog-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .changelog-content li {
+            color: var(--text-secondary);
+            padding: 4px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .changelog-content li::before {
+            content: '\2022';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        /* 社区贡献指南样式 */
+        .phase-badge.phase-contribute { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+
+        .contribute-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .contribute-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .contribute-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .contribute-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .contribute-card h3 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .contribute-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .contribute-card ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 16px;
+        }
+
+        .contribute-card li {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            padding: 4px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .contribute-card li::before {
+            content: '\2022';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        .contribute-link {
+            display: inline-block;
+            color: var(--primary-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .contribute-link:hover {
+            color: var(--primary);
+        }
+
+        .contribute-note {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .contribute-note p {
+            color: var(--text-secondary);
+            margin: 0;
         }
 
         @media (max-width: 768px) {
@@ -566,6 +851,17 @@
                 <a href="chapters/ch28-cost-optimization.html"><span class="nav-icon">&#128176;</span>成本优化与性能<span class="nav-badge new">28</span></a>
                 <a href="chapters/ch29-career-roadmap.html"><span class="nav-icon">&#127919;</span>职业路线图<span class="nav-badge">29</span></a>
                 <a href="chapters/ch30-frontier-trends.html"><span class="nav-icon">&#128301;</span>前沿趋势<span class="nav-badge new">30</span></a>
+
+                <div class="nav-stage-label">第八阶段：S级深度强化</div>
+                <a href="chapters/ch31-springai-internals.html"><span class="nav-icon">&#128296;</span>Spring AI 源码剖析<span class="nav-badge new">31</span></a>
+                <a href="chapters/ch32-performance-benchmark.html"><span class="nav-icon">&#9201;</span>Agent 性能工程<span class="nav-badge new">32</span></a>
+                <a href="chapters/ch33-framework-comparison.html"><span class="nav-icon">&#128203;</span>框架对比与选型<span class="nav-badge new">33</span></a>
+                <a href="chapters/ch34-observability.html"><span class="nav-icon">&#128200;</span>可观测性与监控<span class="nav-badge new">34</span></a>
+
+                <div class="nav-stage-label">交叉检索</div>
+                <a href="#topicIndex"><span class="nav-icon">&#128269;</span>主题索引<span class="nav-badge" style="background:var(--secondary);">&#128218;</span></a>
+                <a href="#changelog"><span class="nav-icon">&#128203;</span>更新记录<span class="nav-badge" style="background:var(--accent);">&#128203;</span></a>
+                <a href="#contribute"><span class="nav-icon">&#129309;</span>社区贡献<span class="nav-badge" style="background:var(--success);">&#129309;</span></a>
             </div>
         </div>
     </nav>
@@ -573,14 +869,14 @@
     <header class="hero">
         <div class="hero-badge">Spring AI + LLM</div>
         <h1>大模型应用开发<br>完整学习手册</h1>
-        <p class="hero-subtitle">三十章系统课程，从零到专家，全面掌握 Spring AI 与大语言模型应用开发的完整能力模型</p>
+        <p class="hero-subtitle">三十四章系统课程，从零到专家，全面掌握 Spring AI 与大语言模型应用开发的完整能力模型</p>
         <div class="hero-stats">
             <div class="stat-item">
-                <div class="stat-value">30</div>
+                <div class="stat-value">34</div>
                 <div class="stat-label">完整章节</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">150+</div>
+                <div class="stat-value">180+</div>
                 <div class="stat-label">核心知识点</div>
             </div>
             <div class="stat-item">
@@ -1323,6 +1619,435 @@
                 </a>
             </div>
         </section>
+
+        <!-- ========== 第八阶段：S级深度强化 ========== -->
+        <section class="section">
+            <div class="section-number">8</div>
+            <h2 class="section-title">第八阶段：S级深度强化</h2>
+            <p class="section-desc">深入源码原理、性能工程、框架对比与可观测性，达到专家级技术深度</p>
+
+            <div class="grid-3">
+                <a href="chapters/ch31-springai-internals.html" class="chapter-card">
+                    <span class="new-badge">NEW</span>
+                    <span class="phase-badge phase-8">专家</span>
+                    <div class="chapter-header">
+                        <div class="chapter-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">&#128296;</div>
+                        <div class="chapter-info">
+                            <h3>第三十一章：Spring AI 内部原理与源码剖析</h3>
+                            <p>深入 Spring AI 核心架构、自动配置机制与扩展点实现</p>
+                        </div>
+                    </div>
+                    <div class="chapter-topics">
+                        <span class="topic-tag new-tag">源码分析</span>
+                        <span class="topic-tag new-tag">架构设计</span>
+                        <span class="topic-tag new-tag">性能调优</span>
+                        <span class="topic-tag new-tag">扩展机制</span>
+                    </div>
+                    <div class="chapter-meta">
+                        <span class="meta-item"><span class="meta-icon">&#9200;</span>6-8 小时</span>
+                        <span class="meta-item"><span class="meta-icon">&#128214;</span>专家级</span>
+                        <span class="meta-item"><span class="meta-icon">&#128187;</span>深度</span>
+                    </div>
+                </a>
+
+                <a href="chapters/ch32-performance-benchmark.html" class="chapter-card">
+                    <span class="new-badge">NEW</span>
+                    <span class="phase-badge phase-8">专家</span>
+                    <div class="chapter-header">
+                        <div class="chapter-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">&#9201;</div>
+                        <div class="chapter-info">
+                            <h3>第三十二章：Agent 系统性能工程与基准测试</h3>
+                            <p>构建科学的性能基准体系，系统化优化 Agent 响应与吞吐</p>
+                        </div>
+                    </div>
+                    <div class="chapter-topics">
+                        <span class="topic-tag new-tag">性能测试</span>
+                        <span class="topic-tag new-tag">基准测试</span>
+                        <span class="topic-tag new-tag">JVM 调优</span>
+                        <span class="topic-tag new-tag">吞吐优化</span>
+                    </div>
+                    <div class="chapter-meta">
+                        <span class="meta-item"><span class="meta-icon">&#9200;</span>5-7 小时</span>
+                        <span class="meta-item"><span class="meta-icon">&#128214;</span>专家级</span>
+                        <span class="meta-item"><span class="meta-icon">&#128187;</span>深度</span>
+                    </div>
+                </a>
+
+                <a href="chapters/ch33-framework-comparison.html" class="chapter-card">
+                    <span class="new-badge">NEW</span>
+                    <span class="phase-badge phase-8">高级</span>
+                    <div class="chapter-header">
+                        <div class="chapter-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">&#128203;</div>
+                        <div class="chapter-info">
+                            <h3>第三十三章：AI Agent 框架对比与选型指南</h3>
+                            <p>多维度对比主流 Agent 框架，制定科学的选型与迁移策略</p>
+                        </div>
+                    </div>
+                    <div class="chapter-topics">
+                        <span class="topic-tag new-tag">框架对比</span>
+                        <span class="topic-tag new-tag">选型决策</span>
+                        <span class="topic-tag new-tag">架构迁移</span>
+                        <span class="topic-tag new-tag">生态评估</span>
+                    </div>
+                    <div class="chapter-meta">
+                        <span class="meta-item"><span class="meta-icon">&#9200;</span>4-6 小时</span>
+                        <span class="meta-item"><span class="meta-icon">&#128214;</span>高级</span>
+                        <span class="meta-item"><span class="meta-icon">&#128187;</span>决策</span>
+                    </div>
+                </a>
+
+                <a href="chapters/ch34-observability.html" class="chapter-card">
+                    <span class="new-badge">NEW</span>
+                    <span class="phase-badge phase-8">高级</span>
+                    <div class="chapter-header">
+                        <div class="chapter-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">&#128200;</div>
+                        <div class="chapter-info">
+                            <h3>第三十四章：Agent 可观测性与监控体系</h3>
+                            <p>基于 OpenTelemetry 构建全链路可观测性，实现 Agent 运行时透明化</p>
+                        </div>
+                    </div>
+                    <div class="chapter-topics">
+                        <span class="topic-tag new-tag">OpenTelemetry</span>
+                        <span class="topic-tag new-tag">监控</span>
+                        <span class="topic-tag new-tag">仪表盘</span>
+                        <span class="topic-tag new-tag">链路追踪</span>
+                    </div>
+                    <div class="chapter-meta">
+                        <span class="meta-item"><span class="meta-icon">&#9200;</span>5-7 小时</span>
+                        <span class="meta-item"><span class="meta-icon">&#128214;</span>高级</span>
+                        <span class="meta-item"><span class="meta-icon">&#128187;</span>运维</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+        <!-- ========== 主题索引与交叉检索 ========== -->
+        <section class="section" id="topicIndex">
+            <div class="section-number" style="background: var(--gradient-3);">&#128269;</div>
+            <h2 class="section-title">&#128218; 主题索引与交叉检索</h2>
+            <p class="section-desc">快速定位任意主题在哪些章节中出现，点击卡片展开查看详细章节列表</p>
+
+            <div class="index-search">
+                <input type="text" placeholder="搜索主题..." id="topicSearch" autocomplete="off">
+            </div>
+
+            <div class="topic-grid" id="topicGrid">
+                <div class="topic-card" data-topic="prompt工程">
+                    <h3>Prompt 工程</h3>
+                    <div class="topic-count">涉及 2 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch03-prompt.html">ch03 基础</a>
+                        <a href="chapters/ch17-prompt-advanced.html">ch17 高级</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="rag系统">
+                    <h3>RAG 系统</h3>
+                    <div class="topic-count">涉及 4 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch04-rag.html">ch04 基础</a>
+                        <a href="chapters/ch05-vector-db.html">ch05 向量数据库</a>
+                        <a href="chapters/ch09-advanced-rag.html">ch09 高级技术</a>
+                        <a href="chapters/ch25-data-pipeline.html">ch25 数据管道</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="向量数据库">
+                    <h3>向量数据库</h3>
+                    <div class="topic-count">涉及 2 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch05-vector-db.html">ch05 深度优化</a>
+                        <a href="chapters/ch09-advanced-rag.html">ch09 高级RAG</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="agent基础">
+                    <h3>Agent 基础</h3>
+                    <div class="topic-count">涉及 2 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch07-agent.html">ch07 智能体</a>
+                        <a href="chapters/ch08-agent-patterns.html">ch08 高级模式</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="记忆系统">
+                    <h3>记忆系统</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch10-agent-memory.html">ch10 Agent 记忆</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="多模态">
+                    <h3>多模态</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch11-multimodal-agent.html">ch11 多模态 Agent</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="规划推理">
+                    <h3>规划推理</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch12-agent-planning.html">ch12 规划与推理</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="安全防护">
+                    <h3>安全防护</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch13-agent-safety.html">ch13 Agent 安全</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="ai伦理">
+                    <h3>AI 伦理</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch14-ai-ethics.html">ch14 伦理与治理</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="评估测试">
+                    <h3>评估测试</h3>
+                    <div class="topic-count">涉及 2 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch15-agent-eval.html">ch15 Agent 评估</a>
+                        <a href="chapters/ch16-llm-testing.html">ch16 LLM 测试</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="工作流编排">
+                    <h3>工作流编排</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch18-agent-workflow.html">ch18 工作流编排</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="多agent">
+                    <h3>多 Agent</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch19-multi-agent.html">ch19 多 Agent 编排</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="mcp协议">
+                    <h3>MCP 协议</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch20-mcp-protocol.html">ch20 MCP + A2A</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="架构模式">
+                    <h3>架构模式</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch21-agent-architecture.html">ch21 架构设计</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="生产部署">
+                    <h3>生产部署</h3>
+                    <div class="topic-count">涉及 2 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch22-production.html">ch22 生产部署</a>
+                        <a href="chapters/ch23-agent-deploy.html">ch23 规模化部署</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="开源模型">
+                    <h3>开源模型</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch24-ollama-vllm.html">ch24 Ollama / vLLM</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="数据管道">
+                    <h3>数据管道</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch25-data-pipeline.html">ch25 数据管道</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="调试排错">
+                    <h3>调试排错</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch26-debugging-guide.html">ch26 调试排错</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="成本优化">
+                    <h3>成本优化</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch28-cost-optimization.html">ch28 成本优化</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="源码分析">
+                    <h3>源码分析</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch31-springai-internals.html">ch31 Spring AI 源码</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="性能基准">
+                    <h3>性能基准</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch32-performance-benchmark.html">ch32 性能工程</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="框架对比">
+                    <h3>框架对比</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch33-framework-comparison.html">ch33 框架选型</a>
+                    </div>
+                </div>
+
+                <div class="topic-card" data-topic="可观测性">
+                    <h3>可观测性</h3>
+                    <div class="topic-count">涉及 1 个章节</div>
+                    <div class="topic-chapters">
+                        <a href="chapters/ch34-observability.html">ch34 监控体系</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== 更新记录 ========== -->
+        <section class="phase-section" id="changelog">
+            <div class="phase-header">
+                <span class="phase-badge phase-changelog">&#128203;</span>
+                <h2>更新记录</h2>
+                <p>记录手册的版本演进和内容更新</p>
+            </div>
+
+            <div class="changelog-timeline">
+                <div class="changelog-item">
+                    <div class="changelog-date">2025-01-15</div>
+                    <div class="changelog-version">v3.0</div>
+                    <div class="changelog-content">
+                        <h4>S级深度强化</h4>
+                        <ul>
+                            <li>新增ch31: Spring AI 内部原理与源码剖析</li>
+                            <li>新增ch32: Agent 系统性能工程与基准测试</li>
+                            <li>新增ch33: AI Agent 框架对比与选型指南</li>
+                            <li>新增ch34: Agent 可观测性与监控体系</li>
+                            <li>添加跨章节主题索引</li>
+                            <li>总章节数从30章扩展到34章</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item">
+                    <div class="changelog-date">2025-01-10</div>
+                    <div class="changelog-version">v2.0</div>
+                    <div class="changelog-content">
+                        <h4>核心能力补全</h4>
+                        <ul>
+                            <li>新增ch10: Agent 记忆系统（深度）</li>
+                            <li>新增ch11: 多模态 Agent</li>
+                            <li>新增ch12: Agent 规划与推理</li>
+                            <li>新增ch14: AI 伦理与治理</li>
+                            <li>新增ch16: LLM 应用测试策略</li>
+                            <li>新增ch17: Prompt 高级技术与优化</li>
+                            <li>新增ch21: Agent 架构设计模式</li>
+                            <li>新增ch25: AI 应用数据管道</li>
+                            <li>新增ch28: Agent 成本优化与性能调优</li>
+                            <li>新增ch30: 前沿趋势与持续学习</li>
+                            <li>总章节数从20章扩展到30章</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="changelog-item">
+                    <div class="changelog-date">2025-01-05</div>
+                    <div class="changelog-version">v1.0</div>
+                    <div class="changelog-content">
+                        <h4>初始版本</h4>
+                        <ul>
+                            <li>创建20章基础内容</li>
+                            <li>涵盖Java/Spring基础、Prompt工程、RAG、Agent核心概念</li>
+                            <li>建立统一的章节结构和视觉设计</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== 社区贡献指南 ========== -->
+        <section class="phase-section" id="contribute">
+            <div class="phase-header">
+                <span class="phase-badge phase-contribute">&#129309;</span>
+                <h2>社区贡献指南</h2>
+                <p>欢迎参与手册的完善和改进</p>
+            </div>
+
+            <div class="contribute-grid">
+                <div class="contribute-card">
+                    <div class="contribute-icon">&#128027;</div>
+                    <h3>提交勘误</h3>
+                    <p>发现内容错误？请通过以下方式提交：</p>
+                    <ul>
+                        <li>在GitHub仓库提交Issue</li>
+                        <li>标注错误章节和具体位置</li>
+                        <li>提供正确的修改建议</li>
+                    </ul>
+                    <a href="https://github.com/your-org/spring-ai-learning-map/issues" target="_blank" class="contribute-link">提交Issue &#8594;</a>
+                </div>
+
+                <div class="contribute-card">
+                    <div class="contribute-icon">&#128221;</div>
+                    <h3>贡献内容</h3>
+                    <p>想要添加新章节或改进现有内容？</p>
+                    <ul>
+                        <li>Fork仓库并创建特性分支</li>
+                        <li>遵循现有章节的结构和风格</li>
+                        <li>提交Pull Request</li>
+                    </ul>
+                    <a href="https://github.com/your-org/spring-ai-learning-map/pulls" target="_blank" class="contribute-link">提交PR &#8594;</a>
+                </div>
+
+                <div class="contribute-card">
+                    <div class="contribute-icon">&#128064;</div>
+                    <h3>内容评审</h3>
+                    <p>帮助评审新提交的内容：</p>
+                    <ul>
+                        <li>检查代码示例是否可运行</li>
+                        <li>验证技术细节的准确性</li>
+                        <li>评估内容的易读性</li>
+                    </ul>
+                    <a href="https://github.com/your-org/spring-ai-learning-map/pulls?q=is%3Apr+is%3Aopen" target="_blank" class="contribute-link">查看开放PR &#8594;</a>
+                </div>
+
+                <div class="contribute-card">
+                    <div class="contribute-icon">&#128172;</div>
+                    <h3>参与讨论</h3>
+                    <p>有想法或建议？欢迎参与讨论：</p>
+                    <ul>
+                        <li>在Discussions中分享想法</li>
+                        <li>参与技术方案的讨论</li>
+                        <li>提出改进建议</li>
+                    </ul>
+                    <a href="https://github.com/your-org/spring-ai-learning-map/discussions" target="_blank" class="contribute-link">参与讨论 &#8594;</a>
+                </div>
+            </div>
+
+            <div class="contribute-note">
+                <p>&#128204; <strong>贡献者激励</strong>：所有贡献者将在手册的致谢部分获得署名，并获得社区徽章。</p>
+            </div>
+        </section>
     </main>
 
     <footer class="footer">
@@ -1358,6 +2083,41 @@
                 if (window.innerWidth <= 768) {
                     document.querySelector('.nav').classList.remove('open');
                 }
+            });
+        });
+
+        // 主题索引：搜索过滤
+        document.getElementById('topicSearch').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const grid = document.getElementById('topicGrid');
+            const cards = grid.querySelectorAll('.topic-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const topic = card.dataset.topic;
+                const text = card.textContent.toLowerCase();
+                const match = topic.includes(query) || text.includes(query);
+                card.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+
+            // 移除旧的无结果提示
+            const oldMsg = grid.querySelector('.topic-no-result');
+            if (oldMsg) oldMsg.remove();
+
+            // 无匹配时显示提示
+            if (visibleCount === 0 && query.length > 0) {
+                const msg = document.createElement('div');
+                msg.className = 'topic-no-result';
+                msg.textContent = '未找到匹配的主题';
+                grid.appendChild(msg);
+            }
+        });
+
+        // 主题索引：点击卡片展开/折叠
+        document.querySelectorAll('.topic-card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.classList.toggle('expanded');
             });
         });
     </script>
