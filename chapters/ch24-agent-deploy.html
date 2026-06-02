@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第十六章：Agent 规模化部署 - Spring AI 学习手册</title>
+    <style>
+        /* === 统一设计令牌 === */
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --spring: #6DB33F;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --bg-nav: rgba(15, 23, 42, 0.98);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --border-light: #475569;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-spring: linear-gradient(135deg, #6DB33F 0%, #5A9A33 100%);
+            /* 布局统一 - 全站一致 */
+            --nav-width: 260px;
+            --nav-padding-x: 16px;
+            --nav-padding-top: 20px;
+            --nav-item-height: 40px;
+            --content-max-width: 920px;
+            --content-padding: 48px;
+            /* 动画曲线 */
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: 0.15s var(--ease-smooth);
+            --transition-normal: 0.25s var(--ease-smooth);
+        }
+
+        /* === Reset === */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.8;
+            padding-left: var(--nav-width);
+            min-height: 100vh;
+        }
+
+        /* === Background Animation === */
+        .bg-animation {
+            position: fixed; top: 0; left: var(--nav-width); right: 0; bottom: 0;
+            pointer-events: none; z-index: -1; overflow: hidden;
+        }
+        .bg-animation::before, .bg-animation::after {
+            content: ''; position: absolute; border-radius: 50%;
+            filter: blur(100px); opacity: 0.12;
+            animation: bg-drift 25s ease-in-out infinite;
+        }
+        .bg-animation::before { width: 500px; height: 500px; background: var(--primary); top: -150px; right: -150px; }
+        .bg-animation::after { width: 400px; height: 400px; background: var(--secondary); bottom: -150px; left: 10%; animation-delay: -12s; }
+        @keyframes bg-drift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.05); }
+            66% { transform: translate(-20px, 30px) scale(0.95); }
+        }
+
+        /* === Progress Bar === */
+        .progress-bar {
+            position: fixed; top: 0; left: var(--nav-width); right: 0;
+            height: 3px; background: var(--bg-card); z-index: 1000;
+        }
+        .progress-bar::after {
+            content: ''; position: absolute; left: 0; top: 0; height: 100%;
+            width: 0%; background: var(--gradient-1);
+            transition: width 0.08s linear; border-radius: 0 2px 2px 0;
+        }
+
+        /* === Sidebar Navigation === */
+        .nav {
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: var(--nav-width); background: var(--bg-nav);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid var(--border);
+            z-index: 1001; display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .nav::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 2px; background: var(--gradient-1); opacity: 0.8;
+        }
+        .nav-content {
+            display: flex; flex-direction: column; height: 100%;
+            overflow-y: auto; overflow-x: hidden;
+            padding: var(--nav-padding-top) var(--nav-padding-x);
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .nav-content::-webkit-scrollbar { width: 4px; }
+        .nav-content::-webkit-scrollbar-track { background: transparent; }
+        .nav-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .nav-content::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+        .nav-logo {
+            font-size: 1.25rem; font-weight: 700;
+            background: var(--gradient-spring); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 2px; letter-spacing: -0.02em;
+        }
+        .nav-sub { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.02em; }
+        .nav-divider { height: 1px; background: var(--border); margin: 16px 0; opacity: 0.6; }
+        .nav-section {
+            font-size: 0.68rem; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1.2px;
+            margin: 16px 0 8px 8px; opacity: 0.7;
+        }
+        .nav-links { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+        .nav-links a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 12px; height: var(--nav-item-height);
+            color: var(--text-secondary); text-decoration: none;
+            border-radius: 8px; border-left: 3px solid transparent;
+            transition: all var(--transition-fast); font-size: 0.85rem;
+            white-space: nowrap; position: relative;
+        }
+        .nav-links a:hover {
+            color: var(--text-primary); background: rgba(99, 102, 241, 0.08);
+            border-left-color: rgba(99, 102, 241, 0.4);
+        }
+        .nav-links a.active {
+            color: var(--primary-light); background: rgba(99, 102, 241, 0.12);
+            border-left-color: var(--primary); font-weight: 500;
+        }
+        .nav-links a.active::after {
+            content: ''; position: absolute; right: 8px;
+            width: 6px; height: 6px; background: var(--primary);
+            border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .nav-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+        .nav-back {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 12px; color: var(--text-muted); text-decoration: none;
+            font-size: 0.85rem; border-radius: 8px;
+            transition: all var(--transition-fast);
+        }
+        .nav-back:hover { color: var(--primary-light); background: rgba(99, 102, 241, 0.08); }
+
+        /* === Mobile Toggle === */
+        .nav-toggle {
+            display: none; position: fixed; top: 12px; left: 12px;
+            width: 42px; height: 42px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 10px;
+            cursor: pointer; z-index: 1002; align-items: center;
+            justify-content: center; color: var(--text-primary);
+            transition: all var(--transition-fast);
+        }
+        .nav-toggle:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+        .nav-toggle span { display: block; width: 18px; height: 2px; background: currentColor; position: relative; transition: all var(--transition-fast); }
+        .nav-toggle span::before, .nav-toggle span::after { content: ''; position: absolute; left: 0; width: 100%; height: 2px; background: currentColor; transition: all var(--transition-fast); }
+        .nav-toggle span::before { top: -6px; }
+        .nav-toggle span::after { bottom: -6px; }
+        .nav-toggle.active span { background: transparent; }
+        .nav-toggle.active span::before { top: 0; transform: rotate(45deg); }
+        .nav-toggle.active span::after { bottom: 0; transform: rotate(-45deg); }
+
+        /* === Hero === */
+        .hero {
+            padding: 80px var(--content-padding) 50px;
+            border-bottom: 1px solid var(--border); position: relative;
+        }
+        .hero::after {
+            content: ''; position: absolute; bottom: 0;
+            left: var(--content-padding); right: var(--content-padding);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.3;
+        }
+        .hero-badge {
+            display: inline-block; padding: 6px 16px;
+            background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px; font-size: 0.8rem; color: var(--primary-light);
+            margin-bottom: 16px; font-weight: 500;
+        }
+        .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 12px; line-height: 1.3; letter-spacing: -0.02em; }
+        .hero-subtitle { font-size: 1.05rem; color: var(--text-secondary); max-width: 700px; }
+        .hero-meta { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+        .meta-item { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* === Main Container === */
+        .container { max-width: var(--content-max-width); margin: 0 auto; padding: 40px var(--content-padding) 80px; }
+        .section { scroll-margin-top: 2rem; margin-bottom: 56px; }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+
+        /* === Cards === */
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .card h3 { font-size: 1.15rem; margin-bottom: 12px; color: var(--primary-light); }
+        .card p, .card li { color: var(--text-secondary); font-size: 0.95rem; }
+        .card h4 { color: var(--text-primary); margin: 16px 0 8px; font-size: 1rem; }
+        .styled-list { list-style: none; }
+        .styled-list li { position: relative; padding: 8px 0 8px 24px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+        .styled-list li:last-child { border-bottom: none; }
+        .styled-list li::before { content: ''; position: absolute; left: 0; top: 16px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; }
+
+        /* === Code Block === */
+        .code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; overflow-x: auto; font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.85rem; line-height: 1.7; color: #c9d1d9; white-space: pre; }
+        .code-block .cmt { color: #8b949e; }
+        .code-block .kw { color: #ff7b72; }
+        .code-block .str { color: #a5d6ff; }
+        .code-block .ann { color: #d2a8ff; }
+        .code-block .cls { color: #79c0ff; }
+        .code-block .fn { color: #d2a8ff; }
+
+        /* === Info Boxes === */
+        .tip-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .tip-box .label { font-weight: 600; color: var(--success); margin-bottom: 6px; }
+        .warn-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .warn-box .label { font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+        .info-box { background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .info-box .label { font-weight: 600; color: var(--secondary); margin-bottom: 6px; }
+        .interview-box { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .interview-box .label { font-weight: 600; color: #a78bfa; margin-bottom: 6px; }
+        .try-box { background: rgba(99, 102, 241, 0.08); border: 1px dashed var(--primary); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .try-box .label { font-weight: 600; color: var(--primary-light); margin-bottom: 6px; }
+
+        /* === Diagram === */
+        .diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; font-family: 'SF Mono', 'Monaco', 'Menlo', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+        .diagram .hl { color: var(--primary-light); font-weight: 600; }
+        .diagram .arr { color: var(--secondary); }
+
+        /* === Grid & Tags === */
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .tag { padding: 4px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; font-size: 0.8rem; color: var(--primary-light); }
+
+        /* === Table === */
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+        th { background: rgba(99, 102, 241, 0.15); padding: 12px; text-align: left; color: var(--primary-light); border: 1px solid var(--border); }
+        td { padding: 10px 12px; border: 1px solid var(--border); color: var(--text-secondary); }
+
+        /* === Footer === */
+        .footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+        .footer a { color: var(--primary-light); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* === Responsive === */
+        @media (max-width: 768px) {
+            :root { --nav-width: 280px; --content-padding: 20px; }
+            body { padding-left: 0; }
+            .nav { transform: translateX(-100%); box-shadow: none; transition: transform 0.3s var(--ease-smooth); }
+            .nav.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4); }
+            .nav-toggle { display: flex; }
+            .progress-bar { left: 0; }
+            .bg-animation { left: 0; }
+            .hero { padding-top: 80px; }
+            .hero h1 { font-size: 1.8rem; }
+            .hero-meta { flex-direction: column; gap: 12px; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <button class="nav-toggle" id="navToggle">&#9776;</button>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="nav-logo">Spring AI</div>
+            <div class="nav-logo">Spring AI</div>
+            <div class="nav-section">第一阶段：基础入门</div>
+            <div class="nav-links">
+                <a href="ch01-foundation.html">第01章 基础准备</a>
+                <a href="ch02-springai-intro.html">第02章 Spring AI 入门</a>
+                <a href="ch03-prompt.html">第03章 Prompt 工程</a>
+                <a href="ch04-prompt-advanced.html">第04章 Prompt 高级技术</a>
+                <a href="ch05-rag.html">第05章 RAG 检索增强</a>
+            </div>
+            <div class="nav-section">第二阶段：核心开发</div>
+            <div class="nav-links">
+                <a href="ch06-vector-db.html">第06章 向量数据库</a>
+                <a href="ch07-advanced.html">第07章 高级特性</a>
+                <a href="ch08-agent.html">第08章 Agent 智能体</a>
+                <a href="ch09-agent-patterns.html">第09章 Agent 模式</a>
+                <a href="ch10-debugging-guide.html">第10章 调试排错</a>
+                <a href="ch11-agent-memory.html">第11章 Agent 记忆系统</a>
+            </div>
+            <div class="nav-section">第三阶段：Agent 进阶</div>
+            <div class="nav-links">
+                <a href="ch12-advanced-rag.html">第12章 高级 RAG</a>
+                <a href="ch13-multimodal-agent.html">第13章 多模态 Agent</a>
+                <a href="ch14-agent-planning.html">第14章 Agent 规划推理</a>
+                <a href="ch15-agent-workflow.html">第15章 Agent 工作流</a>
+                <a href="ch16-multi-agent.html">第16章 多 Agent 编排</a>
+                <a href="ch17-mcp-protocol.html">第17章 MCP 协议</a>
+            </div>
+            <div class="nav-section">第四阶段：安全与评估</div>
+            <div class="nav-links">
+                <a href="ch18-agent-safety.html">第18章 Agent 安全防护</a>
+                <a href="ch19-red-team.html">第19章 红队测试与攻防演练</a>
+                <a href="ch20-ai-ethics.html">第20章 AI 伦理与治理</a>
+                <a href="ch21-agent-eval.html">第21章 Agent 评估测试</a>
+                <a href="ch22-llm-testing.html">第22章 LLM 应用测试</a>
+            </div>
+            <div class="nav-section">第五阶段：生产化</div>
+            <div class="nav-links">
+                <a href="ch23-production.html">第23章 生产部署</a>
+                <a href="ch24-agent-deploy.html" class="active">第24章 Agent 部署</a>
+                <a href="ch25-ollama-vllm.html">第25章 本地模型部署</a>
+                <a href="ch26-fine-tuning.html">第26章 模型微调与定制化</a>
+                <a href="ch27-data-pipeline.html">第27章 数据管道</a>
+                <a href="ch28-observability.html">第28章 可观测性与监控体系</a>
+            </div>
+            <div class="nav-section">第六阶段：架构与平台</div>
+            <div class="nav-links">
+                <a href="ch29-agent-architecture.html">第29章 Agent 架构模式</a>
+                <a href="ch30-agent-platform.html">第30章 企业级 Agent 平台架构</a>
+                <a href="ch31-ai-mlops.html">第31章 AI MLOps 与数据飞轮</a>
+                <a href="ch32-streaming-agent.html">第32章 实时流式与事件驱动 Agent</a>
+                <a href="ch33-framework-comparison.html">第33章 AI Agent 框架对比与选型指南</a>
+            </div>
+            <div class="nav-section">第七阶段：前沿与进阶</div>
+            <div class="nav-links">
+                <a href="ch34-knowledge-graph.html">第34章 知识图谱与 GraphRAG 深度实战</a>
+                <a href="ch35-springai-internals.html">第35章 Spring AI 内部原理与源码剖析</a>
+                <a href="ch36-performance-benchmark.html">第36章 Agent 系统性能工程与基准测试</a>
+                <a href="ch37-cost-optimization.html">第37章 成本优化</a>
+                <a href="ch38-frontier-trends.html">第38章 前沿趋势与持续学习</a>
+            </div>
+            <div class="nav-section">第八阶段：综合实战</div>
+            <div class="nav-links">
+                <a href="ch39-examples.html">第39章 实战案例</a>
+                <a href="ch40-career-roadmap.html">第40章 职业路线</a>
+            </div>
+            <a href="../springai-learning-map.html" class="nav-back">&#8592; 返回学习地图</a>
+            &#8592; 返回学习地图</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+                        <div class="hero-badge">第 24 章</div>
+        <h1>Agent 规模化部署</h1>
+        <p class="hero-subtitle">从"路边摊"到"连锁店" — 掌握 Kubernetes、Serverless、边缘部署等云原生技术，让 AI Agent 在生产环境中稳定运行。</p>
+        <div class="hero-meta">
+            <span class="meta-item">&#9201; 预计 3-4 周</span>
+            <span class="meta-item">&#128214; 6 个知识点</span>
+            <span class="meta-item">&#128187; 高级难度</span>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- 开篇故事 -->
+        <section class="section" id="story">
+            <h2 class="section-title">&#128218; 开篇故事：从路边摊到连锁店</h2>
+            <div class="card">
+                <p>想象你开了一家<strong>路边摊</strong>，卖的是你独家秘方的 AI 智能问答服务。每天只有几十个顾客，一台笔记本电脑就能搞定所有事情。你亲手处理每一个请求，就像厨师亲自掌勺 — 品质有保证，但规模上不去。</p>
+                <p style="margin-top: 12px;">突然有一天，你的 AI 服务火了。顾客排起了长队，一台电脑根本处理不过来。你需要<strong>扩大规模</strong>：雇更多厨师（多实例部署）、租更大的店面（容器化）、开连锁店（多区域部署）、甚至在商场里设自动售货机（边缘部署）。</p>
+                <p style="margin-top: 12px;">这就是 AI Agent 规模化部署的故事。从<strong>单机开发</strong>到<strong>云原生部署</strong>，从<strong>手动运维</strong>到<strong>自动伸缩</strong>，从<strong>单点服务</strong>到<strong>高可用架构</strong> — 每一步都是对"路边摊"的升级。</p>
+                <p style="margin-top: 12px;">本章将带你完成从"个体户"到"连锁企业"的蜕变，掌握 Kubernetes、Serverless、边缘计算等现代部署技术。</p>
+            </div>
+        </section>
+
+        <!-- Kubernetes -->
+        <section class="section" id="k8s">
+            <h2 class="section-title">&#128203; Kubernetes 部署模式</h2>
+
+            <div class="card">
+                <h3>为什么用 Kubernetes？</h3>
+                <p><strong>Kubernetes（K8s）</strong> 是容器编排的事实标准。对于 AI Agent 部署，它提供了：<strong>自动扩缩容</strong>（应对流量波动）、<strong>服务发现</strong>（多个 Agent 实例间通信）、<strong>滚动更新</strong>（零停机部署）。</p>
+
+                <h4>比喻</h4>
+                <p>K8s 就像一个<strong>集装箱码头</strong>：每个容器是一个标准化的集装箱，K8s 负责把这些集装箱运到正确的位置、监控它们的状态、在出问题时自动替换。</p>
+
+                <div class="diagram">
+<pre><span class="hl">Kubernetes 部署架构：</span>
+
+  ┌─────────────────────────────────────────┐
+  │            <span class="hl">K8s Cluster</span>                  │
+  │                                         │
+  │  ┌──────────┐  ┌──────────┐            │
+  │  │ <span class="hl">Agent</span>   │  │ <span class="hl">Agent</span>   │  ...        │
+  │  │ Pod 1    │  │ Pod 2    │            │
+  │  └────┬─────┘  └────┬─────┘            │
+  │       <span class="arr">|</span>            <span class="arr">|</span>                   │
+  │       <span class="arr">v</span>            <span class="arr">v</span>                   │
+  │  ┌─────────────────────────────────────┐│
+  │  │        <span class="hl">Service（负载均衡）</span>           ││
+  │  └─────────────────────┬───────────────┘│
+  │                        <span class="arr">|</span>                │
+  │                        <span class="arr">v</span>                │
+  │  ┌─────────────────────────────────────┐│
+  │  │        <span class="hl">HPA（自动扩缩容）</span>            ││
+  │  └─────────────────────────────────────┘│
+  └─────────────────────────────────────────┘</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>K8s YAML 配置</h3>
+                <div class="code-block">
+<span class="cmt"># ==========================================</span>
+<span class="cmt"># Agent Deployment</span>
+<span class="cmt"># ==========================================</span>
+<span class="kw">apiVersion</span>: apps/v1
+<span class="kw">kind</span>: Deployment
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: ai-agent
+  <span class="kw">labels</span>:
+    <span class="kw">app</span>: ai-agent
+<span class="kw">spec</span>:
+  <span class="kw">replicas</span>: 3
+  <span class="kw">selector</span>:
+    <span class="kw">matchLabels</span>:
+      <span class="kw">app</span>: ai-agent
+  <span class="kw">template</span>:
+    <span class="kw">metadata</span>:
+      <span class="kw">labels</span>:
+        <span class="kw">app</span>: ai-agent
+    <span class="kw">spec</span>:
+      <span class="kw">containers</span>:
+      - <span class="kw">name</span>: agent
+        <span class="kw">image</span>: myregistry.ai-agent:1.0.0
+        <span class="kw">ports</span>:
+        - <span class="kw">containerPort</span>: 8080
+        <span class="kw">resources</span>:
+          <span class="kw">requests</span>:
+            <span class="kw">memory</span>: <span class="str">"512Mi"</span>
+            <span class="kw">cpu</span>: <span class="str">"500m"</span>
+          <span class="kw">limits</span>:
+            <span class="kw">memory</span>: <span class="str">"1Gi"</span>
+            <span class="kw">cpu</span>: <span class="str">"1000m"</span>
+        <span class="kw">env</span>:
+        - <span class="kw">name</span>: OPENAI_API_KEY
+          <span class="kw">valueFrom</span>:
+            <span class="kw">secretKeyRef</span>:
+              <span class="kw">name</span>: ai-secrets
+              <span class="kw">key</span>: openai-api-key
+        <span class="kw">livenessProbe</span>:
+          <span class="kw">httpGet</span>:
+            <span class="kw">path</span>: /actuator/health/liveness
+            <span class="kw">port</span>: 8080
+          <span class="kw">initialDelaySeconds</span>: 30
+          <span class="kw">periodSeconds</span>: 10
+        <span class="kw">readinessProbe</span>:
+          <span class="kw">httpGet</span>:
+            <span class="kw">path</span>: /actuator/health/readiness
+            <span class="kw">port</span>: 8080
+          <span class="kw">initialDelaySeconds</span>: 20
+          <span class="kw">periodSeconds</span>: 5
+
+---
+<span class="cmt"># ==========================================</span>
+<span class="cmt"># Service — 负载均衡</span>
+<span class="cmt"># ==========================================</span>
+<span class="kw">apiVersion</span>: v1
+<span class="kw">kind</span>: Service
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: ai-agent-service
+<span class="kw">spec</span>:
+  <span class="kw">selector</span>:
+    <span class="kw">app</span>: ai-agent
+  <span class="kw">ports</span>:
+  - <span class="kw">port</span>: 80
+    <span class="kw">targetPort</span>: 8080
+  <span class="kw">type</span>: ClusterIP
+
+---
+<span class="cmt"># ==========================================</span>
+<span class="cmt"># HPA — 自动扩缩容</span>
+<span class="cmt"># ==========================================</span>
+<span class="kw">apiVersion</span>: autoscaling/v2
+<span class="kw">kind</span>: HorizontalPodAutoscaler
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: ai-agent-hpa
+<span class="kw">spec</span>:
+  <span class="kw">scaleTargetRef</span>:
+    <span class="kw">apiVersion</span>: apps/v1
+    <span class="kw">kind</span>: Deployment
+    <span class="kw">name</span>: ai-agent
+  <span class="kw">minReplicas</span>: 2
+  <span class="kw">maxReplicas</span>: 10
+  <span class="kw">metrics</span>:
+  - <span class="kw">type</span>: Resource
+    <span class="kw">resource</span>:
+      <span class="kw">name</span>: cpu
+      <span class="kw">target</span>:
+        <span class="kw">type</span>: Utilization
+        <span class="kw">averageUtilization</span>: 70
+</div>
+            </div>
+
+            <div class="tip-box">
+                <div class="label">&#128161; 要点小结</div>
+                <ul class="styled-list">
+                    <li>K8s 部署三件套：<strong>Deployment</strong>（管理 Pod）、<strong>Service</strong>（负载均衡）、<strong>HPA</strong>（自动扩缩容）</li>
+                    <li>API Key 等敏感信息使用 <strong>Secret</strong> 管理</li>
+                    <li>配置<strong>健康检查</strong>（liveness + readiness）确保服务可用性</li>
+                    <li>设置合理的<strong>资源请求和限制</strong>避免资源竞争</li>
+                </ul>
+            </div>
+
+            <div class="warn-box">
+                <div class="label">&#9888;&#65039; 陷阱警告</div>
+                <p>AI Agent 的内存使用波动大（LLM 调用可能消耗大量内存）。建议 <code>limits.memory</code> 设置为 <code>requests.memory</code> 的 2-3 倍，并启用 <strong>Pod Disruption Budget</strong> 确保升级时至少保持 2/3 的 Pod 可用。</p>
+            </div>
+        </section>
+
+        <!-- Serverless -->
+        <section class="section" id="serverless">
+            <h2 class="section-title">&#9729;&#65039; Serverless 部署</h2>
+
+            <div class="card">
+                <h3>什么是 Serverless？</h3>
+                <p><strong>Serverless</strong> 让你专注于代码，不需要管理服务器。按请求计费，空闲时不花钱。非常适合流量波动大的 AI Agent。</p>
+
+                <h4>比喻</h4>
+                <p>就像<strong>弹性工位</strong> — 你不需要租一整间办公室，只需要"按需"使用工位。有人来开会就开一间，没人用就关掉，只为实际使用的资源付费。</p>
+
+                <div class="code-block">
+<span class="cmt">/**
+ * Serverless Agent 部署
+ * 基于 AWS Lambda + Spring Cloud Function
+ */</span>
+
+<span class="cmt">// Spring Cloud Function 配置</span>
+<span class="ann">@Bean</span>
+<span class="kw">public</span> <span class="cls">Function</span>&lt;<span class="cls">AgentRequest</span>, <span class="cls">AgentResponse</span>&gt; <span class="fn">agent</span>(
+        <span class="cls">ChatClient</span> chatClient) {
+    <span class="kw">return</span> request -> {
+        <span class="cls">String</span> reply = chatClient.prompt()
+            .system(request.systemPrompt())
+            .user(request.message())
+            .options(ChatOptions.builder()
+                .model(request.model())
+                .temperature(request.temperature())
+                .build())
+            .call()
+            .content();
+
+        <span class="kw">return new</span> <span class="cls">AgentResponse</span>(reply, <span class="cls">Instant</span>.now());
+    };
+}
+
+<span class="kw">public record</span> <span class="cls">AgentRequest</span>(
+    <span class="cls">String</span> message,
+    <span class="cls">String</span> systemPrompt,
+    <span class="cls">String</span> model,
+    <span class="kw">double</span> temperature
+) {}
+
+<span class="kw">public record</span> <span class="cls">AgentResponse</span>(
+    <span class="cls">String</span> reply,
+    <span class="cls">Instant</span> timestamp
+) {}
+</div>
+
+                <div class="diagram">
+<pre><span class="hl">Serverless 部署架构：</span>
+
+  用户请求
+      <span class="arr">|</span>
+      <span class="arr">v</span>
+  ┌──────────────────┐
+  │  <span class="hl">API Gateway</span>     │
+  └────────┬─────────┘
+           <span class="arr">|</span>
+           <span class="arr">v</span>
+  ┌──────────────────┐     ┌──────────────────┐
+  │  <span class="hl">Lambda</span> 实例 1   │     │  <span class="hl">Lambda</span> 实例 2   │
+  │  (冷启动)        │     │  (热启动)        │
+  └────────┬─────────┘     └────────┬─────────┘
+           <span class="arr">|</span>                        <span class="arr">|</span>
+           <span class="arr">v</span>                        <span class="arr">v</span>
+  ┌──────────────────┐     ┌──────────────────┐
+  │  <span class="hl">OpenAI API</span>      │     │  <span class="hl">向量数据库</span>      │
+  └──────────────────┘     └──────────────────┘</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Serverless 配置要点</h3>
+                <table>
+                    <tr><th>配置项</th><th>AWS Lambda</th><th>Google Cloud Run</th></tr>
+                    <tr><td><strong>最大内存</strong></td><td>10 GB</td><td>32 GB</td></tr>
+                    <tr><td><strong>最大超时</strong></td><td>15 分钟</td><td>60 分钟</td></tr>
+                    <tr><td><strong>冷启动优化</strong></td><td>GraalVM Native Image</td><td>最小实例=1</td></tr>
+                    <tr><td><strong>并发</strong></td><td>1000（可申请更高）</td><td>1000</td></tr>
+                    <tr><td><strong>适合场景</strong></td><td>短时间请求</td><td>长时间推理</td></tr>
+                </table>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; Serverless 优化技巧</div>
+                    <ul class="styled-list">
+                        <li>使用 <strong>GraalVM Native Image</strong> 减少冷启动时间（从秒级到毫秒级）</li>
+                        <li>设置 <code>minInstances=1</code> 保持至少一个热实例（Cloud Run）</li>
+                        <li>将向量数据库连接池化，避免 Lambda 实例间连接管理问题</li>
+                        <li>使用 <strong>Provisioned Concurrency</strong> 预热关键路径</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 边缘部署 -->
+        <section class="section" id="edge">
+            <h2 class="section-title">&#128225; 边缘部署</h2>
+
+            <div class="card">
+                <h3>什么是边缘部署？</h3>
+                <p><strong>边缘部署</strong> 将 AI 推理能力推送到离用户最近的位置，减少延迟、保护隐私、降低带宽成本。</p>
+
+                <h4>比喻</h4>
+                <p>就像<strong>便利店的"前哨站"</strong> — 你不需要去市中心的总店买东西，街角的便利店就能满足日常需求。核心商品在总店（云端），但常用商品在便利店（边缘）。</p>
+
+                <div class="diagram">
+<pre><span class="hl">边缘部署架构：</span>
+
+  ┌─────────────────────────────────────────┐
+  │            <span class="hl">云端（总店）</span>                  │
+  │  ┌──────────┐  ┌──────────┐            │
+  │  │ 大模型   │  │ 知识库   │            │
+  │  │ (GPT-4)  │  │ (向量DB) │            │
+  │  └────┬─────┘  └────┬─────┘            │
+  └───────┼──────────────┼─────────────────┘
+          <span class="arr">|</span>              <span class="arr">|</span>
+          <span class="arr">v</span>              <span class="arr">v</span>
+  ┌─────────────────────────────────────────┐
+  │            <span class="hl">边缘层（便利店）</span>              │
+  │  ┌──────────┐  ┌──────────┐            │
+  │  │ 小模型   │  │ 本地缓存 │            │
+  │  │ (7B量化) │  │ (Redis)  │            │
+  │  └──────────┘  └──────────┘            │
+  └─────────────────────┬───────────────────┘
+                        <span class="arr">|</span>
+                        <span class="arr">v</span>
+  ┌─────────────────────────────────────────┐
+  │            <span class="hl">终端设备（用户）</span>              │
+  │  手机 / IoT / 车机                     │
+  └─────────────────────────────────────────┘</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>边缘推理实现</h3>
+                <div class="code-block">
+<span class="cmt">/**
+ * 边缘 Agent：本地小模型 + 云端大模型混合
+ */</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">EdgeAgentService</span> {
+
+    <span class="kw">private final</span> <span class="cls">ChatClient</span> cloudClient;   <span class="cmt">// 云端大模型</span>
+    <span class="kw">private final</span> <span class="cls">LocalModelRunner</span> localModel;  <span class="cmt">// 本地小模型</span>
+    <span class="kw">private final</span> <span class="cls">RedisTemplate</span>&lt;<span class="cls">String</span>, <span class="cls">String</span>&gt; cache;
+
+    <span class="kw">public</span> <span class="cls">EdgeAgentService</span>(<span class="cls">ChatClient</span> cloudClient,
+                           <span class="cls">LocalModelRunner</span> localModel,
+                           <span class="cls">RedisTemplate</span>&lt;<span class="cls">String</span>, <span class="cls">String</span>&gt; cache) {
+        <span class="kw">this</span>.cloudClient = cloudClient;
+        <span class="kw">this</span>.localModel = localModel;
+        <span class="kw">this</span>.cache = cache;
+    }
+
+    <span class="cmt">/**
+     * 智能路由：根据任务复杂度选择模型
+     */</span>
+    <span class="kw">public</span> <span class="cls">String</span> <span class="fn">answer</span>(<span class="cls">String</span> query) {
+        <span class="cmt">// 1. 检查缓存</span>
+        <span class="cls">String</span> cached = cache.opsForValue().get(<span class="str">"cache:"</span> + query);
+        <span class="kw">if</span> (cached != <span class="kw">null</span>) {
+            <span class="cls">System</span>.out.println(<span class="str">"[Edge] 缓存命中"</span>);
+            <span class="kw">return</span> cached;
+        }
+
+        <span class="cmt">// 2. 用小模型评估任务复杂度</span>
+        <span class="cls">String</span> complexity = localModel.classifyComplexity(query);
+
+        <span class="cls">String</span> answer;
+        <span class="kw">if</span> (<span class="str">"SIMPLE"</span>.equals(complexity)) {
+            <span class="cmt">// 简单任务：本地小模型处理</span>
+            <span class="cls">System</span>.out.println(<span class="str">"[Edge] 使用本地小模型"</span>);
+            answer = localModel.generate(query);
+        } <span class="kw">else</span> {
+            <span class="cmt">// 复杂任务：云端大模型处理</span>
+            <span class="cls">System</span>.out.println(<span class="str">"[Edge] 使用云端大模型"</span>);
+            answer = cloudClient.prompt().user(query).call().content();
+        }
+
+        <span class="cmt">// 3. 缓存结果</span>
+        cache.opsForValue().set(<span class="str">"cache:"</span> + query, answer,
+            <span class="cls">Duration</span>.ofMinutes(30));
+
+        <span class="kw">return</span> answer;
+    }
+}
+</div>
+            </div>
+
+            <div class="tip-box">
+                <div class="label">&#128161; 要点小结</div>
+                <ul class="styled-list">
+                    <li>边缘部署的核心：<strong>本地小模型 + 云端大模型</strong>混合</li>
+                    <li>使用 <strong>模型量化</strong>（INT4/INT8）减少本地模型大小</li>
+                    <li>智能路由根据任务复杂度选择模型</li>
+                    <li>本地缓存减少重复调用，降低延迟和成本</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <div class="label">&#128161; 你知道吗？</div>
+                Spring AI 支持多种本地模型运行时（如 Ollama、ONNX Runtime），可以在边缘设备上运行小型语言模型（如 Phi-3、Gemma 2B），实现真正的端侧 AI。
+            </div>
+        </section>
+
+        <!-- 混合部署 -->
+        <section class="section" id="hybrid">
+            <h2 class="section-title">&#127760; 混合部署策略</h2>
+
+            <div class="card">
+                <h3>云端 + 边缘 + 本地</h3>
+                <p>生产环境通常是<strong>混合部署</strong>：核心推理在云端，低延迟需求在边缘，隐私敏感数据在本地。</p>
+
+                <div class="diagram">
+<pre><span class="hl">混合部署架构：</span>
+
+  ┌─────────────────────────────────────────────────┐
+  │                    <span class="hl">负载均衡器</span>                    │
+  └───────────────────────┬─────────────────────────┘
+                          <span class="arr">|</span>
+            ┌─────────────┼─────────────┐
+            <span class="arr">v</span>             <span class="arr">v</span>             <span class="arr">v</span>
+  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+  │  <span class="hl">云端集群</span>   │ │  <span class="hl">边缘节点</span>   │ │  <span class="hl">本地服务</span>   │
+  │  (K8s)      │ │  (Cloud Run) │ │  (Docker)    │
+  │             │ │              │ │              │
+  │ - 复杂推理  │ │ - 低延迟响应│ │ - 隐私数据  │
+  │ - 大模型    │ │ - 小模型    │ │ - 离线能力  │
+  │ - 全局知识  │ │ - 本地缓存  │ │ - 本地推理  │
+  └──────────────┘ └──────────────┘ └──────────────┘</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>混合部署配置</h3>
+                <div class="code-block">
+<span class="cmt">/**
+ * 混合部署路由策略
+ */</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">HybridDeploymentRouter</span> {
+
+    <span class="kw">public enum</span> <span class="cls">DeployTarget</span> { CLOUD, EDGE, LOCAL }
+
+    <span class="cmt">/**
+     * 根据请求特征路由到不同的部署目标
+     */</span>
+    <span class="kw">public</span> <span class="cls">DeployTarget</span> <span class="fn">route</span>(<span class="cls">AgentRequest</span> request) {
+        <span class="cmt">// 1. 隐私敏感数据 → 本地</span>
+        <span class="kw">if</span> (request.containsSensitiveData()) {
+            <span class="kw">return</span> <span class="cls">DeployTarget</span>.LOCAL;
+        }
+
+        <span class="cmt">// 2. 低延迟要求 → 边缘</span>
+        <span class="kw">if</span> (request.maxLatencyMs() &lt; 200) {
+            <span class="kw">return</span> <span class="cls">DeployTarget</span>.EDGE;
+        }
+
+        <span class="cmt">// 3. 复杂任务 → 云端</span>
+        <span class="kw">if</span> (request.complexity() == <span class="cls">Complexity</span>.HIGH) {
+            <span class="kw">return</span> <span class="cls">DeployTarget</span>.CLOUD;
+        }
+
+        <span class="cmt">// 4. 默认：边缘</span>
+        <span class="kw">return</span> <span class="cls">DeployTarget</span>.EDGE;
+    }
+
+    <span class="cmt">/**
+     * 故障转移：主目标不可用时自动切换
+     */</span>
+    <span class="kw">public</span> <span class="cls">String</span> <span class="fn">executeWithFallback</span>(<span class="cls">AgentRequest</span> request) {
+        <span class="cls">DeployTarget</span> primary = route(request);
+
+        <span class="kw">try</span> {
+            <span class="kw">return</span> executeOn(request, primary);
+        } <span class="kw">catch</span> (<span class="cls">Exception</span> e) {
+            <span class="cls">System</span>.out.printf(<span class="str">"[Hybrid] %s 不可用，尝试回退...%n"</span>, primary);
+
+            <span class="cmt">// 回退策略：LOCAL -> EDGE -> CLOUD</span>
+            <span class="kw">for</span> (<span class="cls">DeployTarget</span> fallback : <span class="cls">List</span>.of(
+                    <span class="cls">DeployTarget</span>.EDGE, <span class="cls">DeployTarget</span>.CLOUD)) {
+                <span class="kw">if</span> (fallback != primary) {
+                    <span class="kw">try</span> {
+                        <span class="kw">return</span> executeOn(request, fallback);
+                    } <span class="kw">catch</span> (<span class="cls">Exception</span> ignored) {}
+                }
+            }
+            <span class="kw">throw new</span> <span class="cls">RuntimeException</span>(<span class="str">"所有部署目标均不可用"</span>);
+        }
+    }
+
+    <span class="kw">private</span> <span class="cls">String</span> <span class="fn">executeOn</span>(<span class="cls">AgentRequest</span> request, <span class="cls">DeployTarget</span> target) {
+        <span class="cmt">// 根据目标调用不同的服务</span>
+        <span class="kw">return switch</span> (target) {
+            <span class="kw">case</span> LOCAL -> localAgent.answer(request.message());
+            <span class="kw">case</span> EDGE -> edgeAgent.answer(request.message());
+            <span class="kw">case</span> CLOUD -> cloudAgent.answer(request.message());
+        };
+    }
+}
+</div>
+            </div>
+
+            <div class="tip-box">
+                <div class="label">&#128161; 要点小结</div>
+                <ul class="styled-list">
+                    <li>混合部署的核心：<strong>智能路由 + 自动故障转移</strong></li>
+                    <li>根据数据敏感度、延迟要求、任务复杂度选择部署目标</li>
+                    <li>回退策略确保<strong>服务连续性</strong></li>
+                    <li>三种部署目标互补：<strong>云端强大、边缘快速、本地安全</strong></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 弹性伸缩 -->
+        <section class="section" id="scaling">
+            <h2 class="section-title">&#128640; 弹性伸缩</h2>
+
+            <div class="card">
+                <h3>自动扩缩容策略</h3>
+                <p>AI Agent 的流量通常有明显的<strong>峰谷模式</strong>（工作日高峰、夜间低谷）。自动伸缩能确保在高峰期不崩溃、低谷期不浪费。</p>
+
+                <h4>比喻</h4>
+                <p>就像<strong>餐厅的弹性排班</strong> — 午餐高峰期多雇几个服务员，下午茶时间减少人手，晚上打烊前只留值班人员。</p>
+
+                <div class="code-block">
+<span class="cmt"># ==========================================</span>
+<span class="cmt"># K8s HPA + VPA + CronHPA 组合配置</span>
+<span class="cmt"># ==========================================</span>
+
+<span class="cmt"># 1. 基于 CPU 的自动扩缩容</span>
+<span class="kw">apiVersion</span>: autoscaling/v2
+<span class="kw">kind</span>: HorizontalPodAutoscaler
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: agent-cpu-hpa
+<span class="kw">spec</span>:
+  <span class="kw">scaleTargetRef</span>:
+    <span class="kw">apiVersion</span>: apps/v1
+    <span class="kw">kind</span>: Deployment
+    <span class="kw">name</span>: ai-agent
+  <span class="kw">minReplicas</span>: 2
+  <span class="kw">maxReplicas</span>: 20
+  <span class="kw">metrics</span>:
+  - <span class="kw">type</span>: Resource
+    <span class="kw">resource</span>:
+      <span class="kw">name</span>: cpu
+      <span class="kw">target</span>:
+        <span class="kw">type</span>: Utilization
+        <span class="kw">averageUtilization</span>: 70
+
+---
+<span class="cmt"># 2. 基于自定义指标（请求队列长度）的扩缩容</span>
+<span class="kw">apiVersion</span>: autoscaling/v2
+<span class="kw">kind</span>: HorizontalPodAutoscaler
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: agent-queue-hpa
+<span class="kw">spec</span>:
+  <span class="kw">scaleTargetRef</span>:
+    <span class="kw">apiVersion</span>: apps/v1
+    <span class="kw">kind</span>: Deployment
+    <span class="kw">name</span>: ai-agent
+  <span class="kw">minReplicas</span>: 2
+  <span class="kw">maxReplicas</span>: 30
+  <span class="kw">metrics</span>:
+  - <span class="kw">type</span>: Pods
+    <span class="kw">pods</span>:
+      <span class="kw">metric</span>:
+        <span class="kw">name</span>: http_requests_per_second
+      <span class="kw">target</span>:
+        <span class="kw">type</span>: AverageValue
+        <span class="kw">averageValue</span>: <span class="str">"100"</span>
+
+---
+<span class="cmt"># 3. CronHPA：定时扩缩容</span>
+<span class="kw">apiVersion</span>: autoscaling/v2
+<span class="kw">kind</span>: HorizontalPodAutoscaler
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: agent-cron-hpa
+<span class="kw">spec</span>:
+  <span class="kw">scaleTargetRef</span>:
+    <span class="kw">apiVersion</span>: apps/v1
+    <span class="kw">kind</span>: Deployment
+    <span class="kw">name</span>: ai-agent
+  <span class="kw">minReplicas</span>: 3
+  <span class="kw">maxReplicas</span>: 15
+  <span class="kw">metrics</span>:
+  - <span class="kw">type</span>: Resource
+    <span class="kw">resource</span>:
+      <span class="kw">name</span>: cpu
+      <span class="kw">target</span>:
+        <span class="kw">type</span>: Utilization
+        <span class="kw">averageUtilization</span>: 60
+</div>
+
+                <div class="diagram">
+<pre><span class="hl">弹性伸缩策略组合：</span>
+
+  <span class="hl">CPU HPA</span>      ─── 应对突发流量（反应式）
+  <span class="hl">Queue HPA</span>    ─── 根据实际负载伸缩（精确式）
+  <span class="hl">CronHPA</span>      ─── 提前应对已知高峰（预测式）
+  <span class="hl">VPA</span>          ─── 自动调整单 Pod 资源（优化式）
+
+  三者结合 = <span class="hl">智能弹性伸缩</span></pre>
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <div class="label">&#128161; 要点小结</div>
+                <ul class="styled-list">
+                    <li><strong>CPU HPA</strong>：基础扩缩容，应对突发流量</li>
+                    <li><strong>Queue HPA</strong>：基于实际请求量精确扩缩</li>
+                    <li><strong>CronHPA</strong>：定时扩缩容，提前应对已知高峰</li>
+                    <li>三种策略<strong>组合使用</strong>效果最佳</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 灾备 -->
+        <section class="section" id="ha">
+            <h2 class="section-title">&#128737;&#65039; 灾备与高可用</h2>
+
+            <div class="card">
+                <h3>多区域部署架构</h3>
+                <p>AI Agent 的高可用需要<strong>多区域部署</strong>：当一个区域出问题时，流量自动切换到其他区域。</p>
+
+                <h4>比喻</h4>
+                <p>就像<strong>安全网</strong> — 你在高空走钢丝（单区域部署），下面有安全网（多区域备份）。即使失足（区域故障），安全网也能接住你。</p>
+
+                <div class="diagram">
+<pre><span class="hl">多区域高可用架构：</span>
+
+  ┌─────────────────────────────────────────────┐
+  │              <span class="hl">全局负载均衡（GSLB）</span>            │
+  │         智能路由 + 健康检查 + 故障转移       │
+  └────────────────┬────────────────┬────────────┘
+                   <span class="arr">|</span>                <span class="arr">|</span>
+          ┌────────┼────────┐      <span class="arr">|</span>
+          <span class="arr">v</span>        <span class="arr">v</span>        <span class="arr">v</span>      <span class="arr">v</span>
+  ┌────────────┐ ┌────────────┐ ┌────────────┐
+  │ <span class="hl">区域 A</span>    │ │ <span class="hl">区域 B</span>    │ │ <span class="hl">区域 C</span>    │
+  │ (华东)     │ │ (华南)     │ │ (华北)     │
+  │            │ │            │ │            │
+  │ - 3 副本   │ │ - 3 副本   │ │ - 2 副本   │
+  │ - 主数据库 │ │ - 从数据库 │ │ - 从数据库 │
+  │ - 向量索引 │ │ - 向量索引 │ │ - 向量索引 │
+  └────────────┘ └────────────┘ └────────────┘</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>故障转移配置</h3>
+                <div class="code-block">
+<span class="cmt">/**
+ * 故障转移与健康检查
+ */</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">HighAvailabilityService</span> {
+
+    <span class="kw">private final</span> <span class="cls">List</span>&lt;<span class="cls">AgentEndpoint</span>&gt; endpoints;
+    <span class="kw">private final</span> <span class="cls">HealthChecker</span> healthChecker;
+
+    <span class="kw">public record</span> <span class="cls">AgentEndpoint</span>(
+        <span class="cls">String</span> region,
+        <span class="cls">String</span> url,
+        <span class="kw">int</span> weight,
+        <span class="cls">AtomicBoolean</span> healthy
+    ) {}
+
+    <span class="cmt">/**
+     * 带故障转移的请求执行
+     */</span>
+    <span class="kw">public</span> <span class="cls">String</span> <span class="fn">executeWithFailover</span>(<span class="cls">String</span> query) {
+        <span class="cmt">// 按权重排序，优先使用健康的端点</span>
+        <span class="cls">List</span>&lt;<span class="cls">AgentEndpoint</span>&gt; sorted = endpoints.stream()
+            .filter(e -> e.healthy().get())
+            .sorted(<span class="cls">Comparator</span>.comparingInt(
+                <span class="cls">AgentEndpoint</span>::weight).reversed())
+            .toList();
+
+        <span class="kw">for</span> (<span class="cls">AgentEndpoint</span> endpoint : sorted) {
+            <span class="kw">try</span> {
+                <span class="cls">String</span> result = callEndpoint(endpoint, query);
+                <span class="cls">System</span>.out.printf(<span class="str">"[HA] 成功: %s%n"</span>, endpoint.region());
+                <span class="kw">return</span> result;
+            } <span class="kw">catch</span> (<span class="cls">Exception</span> e) {
+                <span class="cls">System</span>.out.printf(<span class="str">"[HA] 失败: %s - %s%n"</span>,
+                    endpoint.region(), e.getMessage());
+                endpoint.healthy().set(<span class="kw">false</span>);
+            }
+        }
+
+        <span class="kw">throw new</span> <span class="cls">RuntimeException</span>(<span class="str">"所有区域均不可用"</span>);
+    }
+
+    <span class="cmt">/**
+     * 定期健康检查
+     */</span>
+    <span class="ann">@Scheduled</span>(fixedRate = 30_000)  <span class="cmt">// 每 30 秒检查一次</span>
+    <span class="kw">public void</span> <span class="fn">healthCheck</span>() {
+        <span class="kw">for</span> (<span class="cls">AgentEndpoint</span> endpoint : endpoints) {
+            <span class="kw">boolean</span> healthy = healthChecker.check(endpoint.url());
+            endpoint.healthy().set(healthy);
+            <span class="kw">if</span> (!healthy) {
+                <span class="cls">System</span>.out.printf(<span class="str">"[HA] 区域 %s 不健康%n"</span>,
+                    endpoint.region());
+            }
+        }
+    }
+}
+</div>
+                </div>
+
+            </div>
+
+            <div class="tip-box">
+                <div class="label">&#128161; 要点小结</div>
+                <ul class="styled-list">
+                    <li>高可用的核心：<strong>多区域部署 + 自动故障转移</strong></li>
+                    <li>使用 <strong>GSLB</strong>（全局服务器负载均衡）实现智能路由</li>
+                    <li>定期<strong>健康检查</strong>确保发现故障端点</li>
+                    <li>向量数据库需要<strong>跨区域同步</strong>（如 Weaviate 多区域集群）</li>
+                </ul>
+            </div>
+
+            <div class="warn-box">
+                <div class="label">&#9888;&#65039; 陷阱警告</div>
+                <p>向量数据库的跨区域同步是<strong>最大的挑战</strong>。高维度向量的同步延迟和带宽成本都很高。建议使用<strong>最终一致性</strong>模型，接受秒级的同步延迟。</p>
+            </div>
+        </section>
+
+        <!-- 章节小结 -->
+        <section class="section" id="summary">
+            <h2 class="section-title">&#128214; 章节小结</h2>
+            <div class="card">
+                <p>本章我们掌握了 AI Agent 的 6 种部署模式：</p>
+                <ul class="styled-list">
+                    <li><strong>Kubernetes</strong> — 容器编排的标准方案，适合中大型部署</li>
+                    <li><strong>Serverless</strong> — 按需付费，适合流量波动大的场景</li>
+                    <li><strong>边缘部署</strong> — 低延迟 + 隐私保护，适合终端设备</li>
+                    <li><strong>混合部署</strong> — 云端 + 边缘 + 本地的智能组合</li>
+                    <li><strong>弹性伸缩</strong> — 多种 HPA 策略组合，智能应对流量波动</li>
+                    <li><strong>灾备与高可用</strong> — 多区域部署 + 自动故障转移</li>
+                </ul>
+                <p style="margin-top: 12px;">规模化部署就像<strong>从路边摊到连锁企业</strong> — 每一步升级都需要更专业的运维能力和更完善的技术架构。</p>
+            </div>
+        </section>
+
+        <!-- 面试高频 -->
+        <section class="section" id="interview">
+            <h2 class="section-title">&#127891; 面试高频题</h2>
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q1: K8s HPA 和 VPA 的区别是什么？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>HPA（Horizontal Pod Autoscaler）</strong> 水平扩缩容，增加/减少 Pod 数量；<strong>VPA（Vertical Pod Autoscaler）</strong> 垂直扩缩容，调整单个 Pod 的 CPU/内存资源。HPA 适合无状态服务，VPA 适合有状态服务。
+                </p>
+            </div>
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q2: Serverless 的冷启动问题如何解决？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    1) 使用 <strong>GraalVM Native Image</strong> 编译为原生可执行文件；2) 设置 <code>minInstances=1</code> 保持热实例；3) 使用 <strong>Provisioned Concurrency</strong> 预热；4) 精简依赖减少初始化时间。
+                </p>
+            </div>
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q3: 如何设计 AI Agent 的高可用架构？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    1) <strong>多区域部署</strong>（至少 2 个区域）；2) <strong>全局负载均衡</strong>（智能路由 + 健康检查）；3) <strong>自动故障转移</strong>（主区域故障时自动切换）；4) <strong>数据同步</strong>（向量数据库跨区域复制）。
+                </p>
+            </div>
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q4: 混合部署的路由策略如何设计？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    根据三个维度路由：1) <strong>数据敏感度</strong>（敏感数据→本地）；2) <strong>延迟要求</strong>（低延迟→边缘）；3) <strong>任务复杂度</strong>（复杂任务→云端）。加上自动故障转移确保服务连续性。
+                </p>
+            </div>
+        </section>
+
+        <!-- 练习 -->
+        <section class="section" id="exercises">
+            <h2 class="section-title">&#128187; 动手练习</h2>
+            <div class="try-box">
+                <div class="label">&#9997;&#65039; 练习 1: K8s 部署</div>
+                <p>创建完整的 K8s 部署配置：Deployment（3 副本）+ Service + HPA（CPU 70%）+ Secret + 健康检查。在 Minikube 上部署并验证自动扩缩容。</p>
+            </div>
+            <div class="try-box">
+                <div class="label">&#9997;&#65039; 练习 2: Serverless Agent</div>
+                <p>使用 Spring Cloud Function 将 AI Agent 部署到 AWS Lambda 或 Google Cloud Run。测试冷启动时间并优化到 1 秒以内。</p>
+            </div>
+            <div class="try-box">
+                <div class="label">&#9997;&#65039; 练习 3: 高可用测试</div>
+                <p>搭建双区域部署（可以用两个 Docker 容器模拟），实现故障转移逻辑。手动停止一个区域，验证流量自动切换到另一个区域。</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p><a href="../springai-learning-map.html">&#8592; 返回学习地图</a></p>
+        <p style="margin-top: 8px;">第 24 章：Agent 部署 | Spring AI 学习手册</p>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const pct = (document.documentElement.scrollTop / (document.documentElement.scrollHeight - document.documentElement.clientHeight)) * 100;
+            document.querySelector('.progress-bar').style.cssText = `background: linear-gradient(90deg, var(--primary) ${pct}%, var(--bg-card) ${pct}%)`;
+        });
+        document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+            e.preventDefault();
+            const t = document.querySelector(a.getAttribute('href'));
+            if (t) t.scrollIntoView({ behavior: 'smooth' });
+        }));
+        document.getElementById('navToggle').addEventListener('click', () => document.querySelector('.nav').classList.toggle('open'));
+        const secs = document.querySelectorAll('.section[id]');
+        const navA = document.querySelectorAll('.nav-links a');
+        const obs = new IntersectionObserver(es => es.forEach(e => {
+            if (e.isIntersecting) {
+                const id = e.target.getAttribute('id');
+                navA.forEach(a => { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
+            }
+        }), { rootMargin: '-20% 0px -70% 0px' });
+        secs.forEach(s => obs.observe(s));
+    </script>
+</body>
+</html>

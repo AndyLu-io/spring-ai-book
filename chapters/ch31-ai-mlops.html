@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI MLOps 与数据飞轮 - Spring AI 学习手册</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --spring: #6DB33F;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --bg-nav: rgba(15, 23, 42, 0.98);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --border-light: #475569;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-spring: linear-gradient(135deg, #6DB33F 0%, #5A9A33 100%);
+            --nav-width: 260px;
+            --nav-padding-x: 16px;
+            --nav-padding-top: 20px;
+            --nav-item-height: 40px;
+            --content-max-width: 920px;
+            --content-padding: 48px;
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: 0.15s var(--ease-smooth);
+            --transition-normal: 0.25s var(--ease-smooth);
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark); color: var(--text-primary); line-height: 1.8;
+            padding-left: var(--nav-width); min-height: 100vh;
+        }
+        .bg-animation { position: fixed; top: 0; left: var(--nav-width); right: 0; bottom: 0; pointer-events: none; z-index: -1; overflow: hidden; }
+        .bg-animation::before, .bg-animation::after { content: ''; position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.12; animation: bg-drift 25s ease-in-out infinite; }
+        .bg-animation::before { width: 500px; height: 500px; background: var(--primary); top: -150px; right: -150px; }
+        .bg-animation::after { width: 400px; height: 400px; background: var(--secondary); bottom: -150px; left: 10%; animation-delay: -12s; }
+        @keyframes bg-drift { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(30px, -20px) scale(1.05); } 66% { transform: translate(-20px, 30px) scale(0.95); } }
+        .progress-bar { position: fixed; top: 0; left: var(--nav-width); right: 0; height: 3px; background: var(--bg-card); z-index: 1000; }
+        .progress-bar::after { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: var(--gradient-1); transition: width 0.08s linear; border-radius: 0 2px 2px 0; }
+        .nav { position: fixed; left: 0; top: 0; bottom: 0; width: var(--nav-width); background: var(--bg-nav); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-right: 1px solid var(--border); z-index: 1001; display: flex; flex-direction: column; overflow: hidden; }
+        .nav::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gradient-1); opacity: 0.8; }
+        .nav-content { display: flex; flex-direction: column; height: 100%; overflow-y: auto; overflow-x: hidden; padding: var(--nav-padding-top) var(--nav-padding-x); scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+        .nav-content::-webkit-scrollbar { width: 4px; }
+        .nav-content::-webkit-scrollbar-track { background: transparent; }
+        .nav-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .nav-content::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+        .nav-logo { font-size: 1.25rem; font-weight: 700; background: var(--gradient-spring); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 2px; letter-spacing: -0.02em; }
+        .nav-sub { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.02em; }
+        .nav-divider { height: 1px; background: var(--border); margin: 16px 0; opacity: 0.6; }
+        .nav-section { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin: 16px 0 8px 8px; opacity: 0.7; }
+        .nav-links { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+        .nav-links a { display: flex; align-items: center; gap: 10px; padding: 0 12px; height: var(--nav-item-height); color: var(--text-secondary); text-decoration: none; border-radius: 8px; border-left: 3px solid transparent; transition: all var(--transition-fast); font-size: 0.85rem; white-space: nowrap; position: relative; }
+        .nav-links a:hover { color: var(--text-primary); background: rgba(99, 102, 241, 0.08); border-left-color: rgba(99, 102, 241, 0.4); }
+        .nav-links a.active { color: var(--primary-light); background: rgba(99, 102, 241, 0.12); border-left-color: var(--primary); font-weight: 500; }
+        .nav-links a.active::after { content: ''; position: absolute; right: 8px; width: 6px; height: 6px; background: var(--primary); border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+        .nav-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+        .nav-back { display: flex; align-items: center; gap: 8px; padding: 10px 12px; color: var(--text-muted); text-decoration: none; font-size: 0.85rem; border-radius: 8px; transition: all var(--transition-fast); }
+        .nav-back:hover { color: var(--primary-light); background: rgba(99, 102, 241, 0.08); }
+        .nav-toggle { display: none; position: fixed; top: 12px; left: 12px; width: 42px; height: 42px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; z-index: 1002; align-items: center; justify-content: center; color: var(--text-primary); transition: all var(--transition-fast); }
+        .nav-toggle:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+        .nav-toggle span { display: block; width: 18px; height: 2px; background: currentColor; position: relative; transition: all var(--transition-fast); }
+        .nav-toggle span::before, .nav-toggle span::after { content: ''; position: absolute; left: 0; width: 100%; height: 2px; background: currentColor; transition: all var(--transition-fast); }
+        .nav-toggle span::before { top: -6px; }
+        .nav-toggle span::after { bottom: -6px; }
+        .nav-toggle.active span { background: transparent; }
+        .nav-toggle.active span::before { top: 0; transform: rotate(45deg); }
+        .nav-toggle.active span::after { bottom: 0; transform: rotate(-45deg); }
+        .hero { padding: 80px var(--content-padding) 50px; border-bottom: 1px solid var(--border); position: relative; }
+        .hero::after { content: ''; position: absolute; bottom: 0; left: var(--content-padding); right: var(--content-padding); height: 1px; background: linear-gradient(90deg, transparent, var(--primary), transparent); opacity: 0.3; }
+        .hero-badge { display: inline-block; padding: 6px 16px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 20px; font-size: 0.8rem; color: var(--primary-light); margin-bottom: 16px; font-weight: 500; }
+        .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 12px; line-height: 1.3; letter-spacing: -0.02em; }
+        .hero-subtitle { font-size: 1.05rem; color: var(--text-secondary); max-width: 700px; }
+        .hero-meta { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+        .meta-item { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-muted); }
+        .container { max-width: var(--content-max-width); margin: 0 auto; padding: 40px var(--content-padding) 80px; }
+        .section { scroll-margin-top: 2rem; margin-bottom: 56px; }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .card h3 { font-size: 1.15rem; margin-bottom: 12px; color: var(--primary-light); }
+        .card p, .card li { color: var(--text-secondary); font-size: 0.95rem; }
+        .card h4 { color: var(--text-primary); margin: 16px 0 8px; font-size: 1rem; }
+        .styled-list { list-style: none; }
+        .styled-list li { position: relative; padding: 8px 0 8px 24px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+        .styled-list li:last-child { border-bottom: none; }
+        .styled-list li::before { content: ''; position: absolute; left: 0; top: 16px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; }
+        .code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; overflow-x: auto; font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.85rem; line-height: 1.7; color: #c9d1d9; white-space: pre; }
+        .code-block .cmt { color: #8b949e; }
+        .code-block .kw { color: #ff7b72; }
+        .code-block .str { color: #a5d6ff; }
+        .code-block .ann { color: #d2a8ff; }
+        .code-block .cls { color: #79c0ff; }
+        .code-block .fn { color: #d2a8ff; }
+        .tip-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .tip-box .label { font-weight: 600; color: var(--success); margin-bottom: 6px; }
+        .warn-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .warn-box .label { font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+        .info-box { background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .info-box .label { font-weight: 600; color: var(--secondary); margin-bottom: 6px; }
+        .interview-box { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .interview-box .label { font-weight: 600; color: #a78bfa; margin-bottom: 6px; }
+        .try-box { background: rgba(99, 102, 241, 0.08); border: 1px dashed var(--primary); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .try-box .label { font-weight: 600; color: var(--primary-light); margin-bottom: 6px; }
+        .diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; font-family: 'SF Mono', 'Monaco', 'Menlo', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+        .diagram .hl { color: var(--primary-light); font-weight: 600; }
+        .diagram .arr { color: var(--secondary); }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .tag { padding: 4px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; font-size: 0.8rem; color: var(--primary-light); }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+        th { background: rgba(99, 102, 241, 0.15); padding: 12px; text-align: left; color: var(--primary-light); border: 1px solid var(--border); }
+        td { padding: 10px 12px; border: 1px solid var(--border); color: var(--text-secondary); }
+        .footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+        .footer a { color: var(--primary-light); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            :root { --nav-width: 280px; --content-padding: 20px; }
+            body { padding-left: 0; }
+            .nav { transform: translateX(-100%); box-shadow: none; transition: transform 0.3s var(--ease-smooth); }
+            .nav.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4); }
+            .nav-toggle { display: flex; }
+            .progress-bar { left: 0; }
+            .bg-animation { left: 0; }
+            .hero { padding-top: 80px; }
+            .hero h1 { font-size: 1.8rem; }
+            .hero-meta { flex-direction: column; gap: 12px; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <button class="nav-toggle" id="navToggle">&#9776;</button>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="nav-logo">Spring AI</div>
+            <div class="nav-logo">Spring AI</div>
+            <div class="nav-section">第一阶段：基础入门</div>
+            <div class="nav-links">
+                <a href="ch01-foundation.html">第01章 基础准备</a>
+                <a href="ch02-springai-intro.html">第02章 Spring AI 入门</a>
+                <a href="ch03-prompt.html">第03章 Prompt 工程</a>
+                <a href="ch04-prompt-advanced.html">第04章 Prompt 高级技术</a>
+                <a href="ch05-rag.html">第05章 RAG 检索增强</a>
+            </div>
+            <div class="nav-section">第二阶段：核心开发</div>
+            <div class="nav-links">
+                <a href="ch06-vector-db.html">第06章 向量数据库</a>
+                <a href="ch07-advanced.html">第07章 高级特性</a>
+                <a href="ch08-agent.html">第08章 Agent 智能体</a>
+                <a href="ch09-agent-patterns.html">第09章 Agent 模式</a>
+                <a href="ch10-debugging-guide.html">第10章 调试排错</a>
+                <a href="ch11-agent-memory.html">第11章 Agent 记忆系统</a>
+            </div>
+            <div class="nav-section">第三阶段：Agent 进阶</div>
+            <div class="nav-links">
+                <a href="ch12-advanced-rag.html">第12章 高级 RAG</a>
+                <a href="ch13-multimodal-agent.html">第13章 多模态 Agent</a>
+                <a href="ch14-agent-planning.html">第14章 Agent 规划推理</a>
+                <a href="ch15-agent-workflow.html">第15章 Agent 工作流</a>
+                <a href="ch16-multi-agent.html">第16章 多 Agent 编排</a>
+                <a href="ch17-mcp-protocol.html">第17章 MCP 协议</a>
+            </div>
+            <div class="nav-section">第四阶段：安全与评估</div>
+            <div class="nav-links">
+                <a href="ch18-agent-safety.html">第18章 Agent 安全防护</a>
+                <a href="ch19-red-team.html">第19章 红队测试与攻防演练</a>
+                <a href="ch20-ai-ethics.html">第20章 AI 伦理与治理</a>
+                <a href="ch21-agent-eval.html">第21章 Agent 评估测试</a>
+                <a href="ch22-llm-testing.html">第22章 LLM 应用测试</a>
+            </div>
+            <div class="nav-section">第五阶段：生产化</div>
+            <div class="nav-links">
+                <a href="ch23-production.html">第23章 生产部署</a>
+                <a href="ch24-agent-deploy.html">第24章 Agent 部署</a>
+                <a href="ch25-ollama-vllm.html">第25章 本地模型部署</a>
+                <a href="ch26-fine-tuning.html">第26章 模型微调与定制化</a>
+                <a href="ch27-data-pipeline.html">第27章 数据管道</a>
+                <a href="ch28-observability.html">第28章 可观测性与监控体系</a>
+            </div>
+            <div class="nav-section">第六阶段：架构与平台</div>
+            <div class="nav-links">
+                <a href="ch29-agent-architecture.html">第29章 Agent 架构模式</a>
+                <a href="ch30-agent-platform.html">第30章 企业级 Agent 平台架构</a>
+                <a href="ch31-ai-mlops.html" class="active">第31章 AI MLOps 与数据飞轮</a>
+                <a href="ch32-streaming-agent.html">第32章 实时流式与事件驱动 Agent</a>
+                <a href="ch33-framework-comparison.html">第33章 AI Agent 框架对比与选型指南</a>
+            </div>
+            <div class="nav-section">第七阶段：前沿与进阶</div>
+            <div class="nav-links">
+                <a href="ch34-knowledge-graph.html">第34章 知识图谱与 GraphRAG 深度实战</a>
+                <a href="ch35-springai-internals.html">第35章 Spring AI 内部原理与源码剖析</a>
+                <a href="ch36-performance-benchmark.html">第36章 Agent 系统性能工程与基准测试</a>
+                <a href="ch37-cost-optimization.html">第37章 成本优化</a>
+                <a href="ch38-frontier-trends.html">第38章 前沿趋势与持续学习</a>
+            </div>
+            <div class="nav-section">第八阶段：综合实战</div>
+            <div class="nav-links">
+                <a href="ch39-examples.html">第39章 实战案例</a>
+                <a href="ch40-career-roadmap.html">第40章 职业路线</a>
+            </div>
+            <a href="../springai-learning-map.html" class="nav-back">&#8592; 返回学习地图</a>
+            &#8592; 返回学习地图</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+                        <div class="hero-badge">第 31 章</div>
+        <h1>AI MLOps 与数据飞轮</h1>
+        <p class="hero-subtitle">从"一次性部署"到"持续进化" -- 掌握模型版本管理、A/B 测试、自动重训练和数据飞轮，让 Agent 在生产环境中越用越聪明。</p>
+        <div class="hero-meta">
+            <span class="meta-item">&#9201; 预计 3-4 周</span>
+            <span class="meta-item">&#128214; 6 个知识点</span>
+            <span class="meta-item">&#128187; 高级难度</span>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- ==================== 开篇故事 ==================== -->
+        <section class="section" id="story">
+            <h2 class="section-title">&#128218; 开篇故事：从手工匠人到智能工厂</h2>
+            <div class="card">
+                <p>一个团队花了三个月精心训练了一个客服 Agent。他们用 10 万条历史对话做微调，用精心设计的 Prompt 做 RAG，上线第一天就获得了 92% 的满意度。产品经理喜极而泣："我们的 Agent 太聪明了！"</p>
+                <p style="margin-top: 12px;">但三个月后，用户投诉越来越多。满意度从 92% 跌到了 71%。用户开始抱怨："它连我们新出的套餐都不知道"、"上次问退款流程，它还在用旧的标准"、"它推荐的产品早就下架了"。</p>
+                <p style="margin-top: 12px;">原因很简单：<strong>业务在变、产品在更新、用户习惯在迁移，而 Agent 的知识停留在三个月前。</strong>就像一个厨师精心学会了做川菜，但餐厅改成了粤菜馆 -- 他的手艺再好，做的菜也不是客人想要的。</p>
+                <p style="margin-top: 12px;">团队试过手动更新知识库，但业务迭代太快，新功能每周都在上线，手动更新永远跟不上节奏。他们意识到：Agent 需要的不是一次性的"训练完就上线"，而是一个<strong>持续进化</strong>的工程体系。</p>
+                <p style="margin-top: 12px;">这就是 <strong>MLOps</strong> 要解决的问题。MLOps 不是某个工具，而是一套完整的工程实践 -- 它让 AI 系统像活的有机体一样，能感知环境变化、自动调整策略、持续自我进化。数据飞轮（Data Flywheel）则是 MLOps 的核心引擎：用户使用产生数据，数据驱动模型改进，更好的模型吸引更多用户，更多用户产生更多数据 -- 飞轮一旦转起来，Agent 就会越用越聪明。</p>
+            </div>
+        </section>
+
+        <!-- ==================== 学习目标 ==================== -->
+        <section class="section" id="objectives">
+            <h2 class="section-title">&#127919; 学习目标</h2>
+            <div class="card">
+                <p>在本章结束后，你将能够：</p>
+                <ul class="styled-list">
+                    <li><strong>理解</strong> MLOps 的核心概念与生命周期，掌握它与传统 DevOps 的异同点</li>
+                    <li><strong>设计并实现</strong>模型版本管理系统，包括模型注册表、版本策略和血缘追踪</li>
+                    <li><strong>构建</strong> A/B 测试与灰度发布体系，让数据驱动模型选择，而非拍脑袋决策</li>
+                    <li><strong>实现</strong>数据飞轮闭环：从用户反馈收集、自动标注到触发重训练的完整流水线</li>
+                    <li><strong>掌握</strong>生产环境的监控告警与自动回滚机制，包括数据漂移检测和模型退化防护</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ==================== 核心内容 1：MLOps 基础 ==================== -->
+        <section class="section" id="content-1">
+            <h2 class="section-title">&#128196; 核心内容（第1节）：MLOps 基础 -- AI 系统的 DevOps</h2>
+
+            <div class="card">
+                <h3>&#128196; 什么是 MLOps</h3>
+                <p>MLOps（Machine Learning Operations）是将 DevOps 理念应用于机器学习系统的工程实践。如果说 DevOps 解决的是"如何让软件持续、可靠地交付"，那么 MLOps 解决的就是<strong>"如何让 AI 模型持续、可靠地进化"</strong>。</p>
+                <p style="margin-top: 12px;">传统软件的核心资产是<strong>代码</strong>，代码修改后重新编译部署即可。但 AI 系统的核心资产是<strong>模型 + 数据</strong>，它们之间的依赖关系远比代码复杂：模型效果取决于数据质量，数据分布会随时间漂移，模型训练结果具有不确定性。因此，MLOps 需要一套完全不同于传统 DevOps 的流程和工具。</p>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; MLOps vs DevOps</h3>
+                <table>
+                    <tr><th>维度</th><th>DevOps</th><th>MLOps</th></tr>
+                    <tr><td><strong>核心资产</strong></td><td>源代码</td><td>模型 + 数据 + 代码</td></tr>
+                    <tr><td><strong>版本管理</strong></td><td>Git（代码版本）</td><td>Git + DVC（数据版本）+ MLflow（模型版本）</td></tr>
+                    <tr><td><strong>测试重点</strong></td><td>功能测试、集成测试</td><td>数据验证、模型评估、性能基准测试</td></tr>
+                    <tr><td><strong>部署对象</strong></td><td>应用二进制文件</td><td>模型权重 + 推理服务 + 特征管道</td></tr>
+                    <tr><td><strong>监控指标</strong></td><td>延迟、吞吐量、错误率</td><td>漂移检测、模型精度、特征分布</td></tr>
+                    <tr><td><strong>回滚触发</strong></td><td>错误率飙升、健康检查失败</td><td>数据漂移、精度下降、延迟退化</td></tr>
+                    <tr><td><strong>反馈闭环</strong></td><td>用户反馈 -> Bug 修复</td><td>用户反馈 -> 数据标注 -> 重训练 -> 部署</td></tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; MLOps 生命周期</h3>
+                <p>MLOps 的核心是一个<strong>持续循环</strong>的生命周期，而非传统的线性流水线：</p>
+
+                <div class="diagram"><span class="hl">┌──────────┐</span>    <span class="arr">→</span>    <span class="hl">┌──────────┐</span>    <span class="arr">→</span>    <span class="hl">┌──────────┐</span>
+│  <span class="hl">数据准备</span>  │          │  <span class="hl">模型训练</span>  │          │  <span class="hl">模型评估</span>  │
+│ (采集/清洗) │          │ (微调/验证) │          │ (指标/对比) │
+<span class="hl">└──────────┘</span>          <span class="hl">└──────────┘</span>          <span class="hl">└──────────┘</span>
+      <span class="arr">↑</span>                                                     <span class="arr">↓</span>
+<span class="hl">┌──────────┐</span>    <span class="arr">←</span>    <span class="hl">┌──────────┐</span>    <span class="arr">←</span>    <span class="hl">┌──────────┐</span>
+│  <span class="hl">反馈收集</span>  │          │  <span class="hl">模型监控</span>  │          │  <span class="hl">模型部署</span>  │
+│ (日志/标注) │          │ (漂移检测) │          │ (A/B/灰度) │
+<span class="hl">└──────────┘</span>          <span class="hl">└──────────┘</span>          <span class="hl">└──────────┘</span></div>
+
+                <p style="margin-top: 12px;">每个环节都不是孤立的，而是紧密咬合的齿轮：</p>
+                <ul class="styled-list">
+                    <li><strong>数据准备</strong> -- 从生产环境收集用户交互日志、反馈数据、新增知识，清洗后作为训练数据</li>
+                    <li><strong>模型训练</strong> -- 使用新数据对模型进行增量微调或完全重训练</li>
+                    <li><strong>模型评估</strong> -- 在离线测试集上评估新模型，与当前生产模型进行对比</li>
+                    <li><strong>模型部署</strong> -- 通过 A/B 测试或灰度发布将新模型推送到生产环境</li>
+                    <li><strong>模型监控</strong> -- 实时监控模型的各项指标，检测数据漂移和性能退化</li>
+                    <li><strong>反馈收集</strong> -- 收集用户对模型输出的显式和隐式反馈，闭环回到数据准备</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; MLOps 核心组件与工具链</h3>
+
+                <div class="diagram"><span class="hl">MLOps 工具链全景</span>
+
+<span class="hl">┌─────────────────────────────────────────────────────────┐</span>
+│                    <span class="hl">实验追踪层</span>                           │
+│         MLflow Tracking / W&B / Neptune.ai              │
+<span class="hl">└─────────────────────────────────────────────────────────┘</span>
+         <span class="arr">↓</span>                    <span class="arr">↓</span>                    <span class="arr">↓</span>
+<span class="hl">┌──────────────┐</span>  <span class="hl">┌──────────────┐</span>  <span class="hl">┌──────────────┐</span>
+│  <span class="hl">模型注册表</span>   │  │  <span class="hl">特征存储</span>     │  │  <span class="hl">数据版本</span>     │
+│  MLflow      │  │  Feast       │  │  DVC / LakeFS│
+│  Registry    │  │              │  │              │
+<span class="hl">└──────────────┘</span>  <span class="hl">└──────────────┘</span>  <span class="hl">└──────────────┘</span>
+         <span class="arr">↓</span>
+<span class="hl">┌─────────────────────────────────────────────────────────┐</span>
+│                    <span class="hl">模型服务层</span>                           │
+│       TF Serving / Triton / Spring AI + REST API        │
+<span class="hl">└─────────────────────────────────────────────────────────┘</span>
+         <span class="arr">↓</span>
+<span class="hl">┌─────────────────────────────────────────────────────────┐</span>
+│                    <span class="hl">监控告警层</span>                           │
+│       Evidently AI / Prometheus + Grafana / 自研          │
+<span class="hl">└─────────────────────────────────────────────────────────┘</span></div>
+
+                <table>
+                    <tr><th>组件</th><th>功能</th><th>推荐工具</th></tr>
+                    <tr><td><strong>实验追踪</strong></td><td>记录每次训练的参数、指标、产物</td><td>MLflow、Weights & Biases、Neptune</td></tr>
+                    <tr><td><strong>模型注册</strong></td><td>版本管理、阶段流转、审批流程</td><td>MLflow Model Registry、DVC</td></tr>
+                    <tr><td><strong>特征存储</strong></td><td>特征的集中管理、复用、一致性保障</td><td>Feast、Tecton、Hopsworks</td></tr>
+                    <tr><td><strong>数据版本</strong></td><td>数据集的版本控制与血缘追踪</td><td>DVC、LakeFS、Delta Lake</td></tr>
+                    <tr><td><strong>流水线编排</strong></td><td>端到端的训练/推理流水线调度</td><td>Kubeflow Pipelines、Airflow、Argo Workflows</td></tr>
+                    <tr><td><strong>模型服务</strong></td><td>高性能、可扩展的模型推理服务</td><td>TF Serving、Triton、BentoML</td></tr>
+                    <tr><td><strong>监控告警</strong></td><td>漂移检测、性能监控、自动告警</td><td>Evidently AI、Whylogs、Arize</td></tr>
+                </table>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; Spring AI 生态的 MLOps 定位</div>
+                    <p>Spring AI 并不直接提供完整的 MLOps 工具链，但它在<strong>模型服务层</strong>和<strong>反馈收集层</strong>扮演关键角色。Spring AI 的 ChatClient、ModelClient 提供了统一的模型调用抽象，可以无缝切换底层模型；通过 Spring Boot 的 Actuator 和 Micrometer，可以轻松集成 Prometheus + Grafana 实现监控；通过 Spring 的事件机制，可以构建完整的反馈收集管道。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 核心内容 2：模型版本管理 ==================== -->
+        <section class="section" id="content-2">
+            <h2 class="section-title">&#128196; 核心内容（第2节）：模型版本管理 -- 给每个模型打上身份证</h2>
+
+            <div class="card">
+                <h3>&#128196; 为什么需要模型版本管理</h3>
+                <p>想象这样一个场景：你的 Agent 上线了一个微调模型，效果不错。一周后又上线了另一个版本。两周后产品经理问："上周三用户反馈突然变差，是不是新模型的问题？"你打开服务器发现：旧模型的权重文件已经被覆盖了，训练时的超参数也没记录，数据集版本更是模糊不清。</p>
+                <p style="margin-top: 12px;"><strong>模型版本管理</strong>解决的核心问题是：确保每一次模型变更都可追溯、可复现、可回滚。它管理的不仅是模型权重文件，还包括：</p>
+                <ul class="styled-list">
+                    <li><strong>模型产物</strong> -- 权重文件、配置文件、Tokenizer、预处理逻辑</li>
+                    <li><strong>训练元数据</strong> -- 超参数、训练数据版本、训练环境、训练耗时</li>
+                    <li><strong>评估指标</strong> -- 离线评估指标、对比测试结果、人工评审记录</li>
+                    <li><strong>血缘关系</strong> -- 这个模型用了哪些数据、从哪个基础模型微调而来</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 模型注册表设计</h3>
+                <p>模型注册表（Model Registry）是 MLOps 的核心组件之一。它本质上是一个<strong>模型的生命周期管理系统</strong>，管理模型从注册到退役的全过程：</p>
+
+                <div class="diagram"><span class="hl">┌──────────┐</span>    <span class="arr">→</span>    <span class="hl">┌──────────┐</span>    <span class="arr">→</span>    <span class="hl">┌──────────┐</span>
+│ <span class="hl">REGISTERED</span> │          │ <span class="hl">STAGING</span>   │          │ <span class="hl">PRODUCTION</span>│
+│  (已注册)  │          │  (预发布)  │          │  (生产中)  │
+<span class="hl">└──────────┘</span>          <span class="hl">└──────────┘</span>          <span class="hl">└──────────┘</span>
+                                      <span class="arr">↓</span>
+                                <span class="hl">┌──────────┐</span>
+                                │ <span class="hl">ARCHIVED</span>  │
+                                │  (已归档)  │
+                                <span class="hl">└──────────┘</span></div>
+
+                <p style="margin-top: 12px;">模型版本的命名策略通常采用<strong>三件套</strong>：</p>
+                <ul class="styled-list">
+                    <li><strong>语义版本号</strong> -- 如 v1.2.3，主版本号变更表示不兼容的重大更新，次版本号表示新功能，修订号表示 Bug 修复</li>
+                    <li><strong>数据版本标识</strong> -- 如 data-20240115，记录训练所用的数据集版本</li>
+                    <li><strong>代码版本标识</strong> -- 如 commit-abc1234，关联训练代码的 Git 提交</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; Java 代码实现：模型注册服务</h3>
+
+                <div class="code-block"><span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">ModelRegistryService</span> {
+
+    <span class="kw">private final</span> <span class="cls">ModelRepository</span> modelRepository;
+
+    <span class="kw">public</span> <span class="cls">ModelVersion</span> <span class="fn">registerModel</span>(String modelName, String artifactPath,
+                                       Map&lt;String, String&gt; metadata) {
+        String version = <span class="fn">generateVersion</span>(modelName);
+        <span class="cls">ModelVersion</span> mv = <span class="cls">ModelVersion</span>.builder()
+            .name(modelName)
+            .version(version)
+            .artifactPath(artifactPath)
+            .status(<span class="cls">ModelStatus</span>.REGISTERED)
+            .metadata(metadata)
+            .createdAt(<span class="cls">Instant</span>.now())
+            .build();
+
+        modelRepository.save(mv);
+        <span class="kw">return</span> mv;
+    }
+
+    <span class="kw">public</span> <span class="cls">ModelVersion</span> <span class="fn">promoteToProduction</span>(String modelName, String version) {
+        <span class="cls">ModelVersion</span> mv = modelRepository.<span class="fn">findByNameAndVersion</span>(modelName, version);
+        mv.setStatus(<span class="cls">ModelStatus</span>.PRODUCTION);
+        mv.setPromotedAt(<span class="cls">Instant</span>.now());
+
+        <span class="cmt">// 自动回滚准备：将当前生产版本归档</span>
+        <span class="cls">ModelVersion</span> previous = modelRepository
+            .<span class="fn">findByNameAndStatus</span>(modelName, <span class="cls">ModelStatus</span>.PRODUCTION);
+        <span class="kw">if</span> (previous != <span class="kw">null</span>) {
+            previous.setStatus(<span class="cls">ModelStatus</span>.ARCHIVED);
+            modelRepository.save(previous);
+        }
+
+        <span class="kw">return</span> modelRepository.save(mv);
+    }
+}</div>
+
+                <div class="code-block"><span class="cmt">// 模型版本实体</span>
+<span class="ann">@Entity</span>
+<span class="ann">@Builder</span>
+<span class="ann">@Data</span>
+<span class="kw">public class</span> <span class="cls">ModelVersion</span> {
+
+    <span class="ann">@Id</span>
+    <span class="ann">@GeneratedValue</span>
+    <span class="kw">private</span> Long id;
+
+    <span class="kw">private</span> String name;             <span class="cmt">// 模型名称</span>
+    <span class="kw">private</span> String version;          <span class="cmt">// 版本号</span>
+    <span class="kw">private</span> String artifactPath;     <span class="cmt">// 模型文件路径</span>
+    <span class="ann">@Enumerated</span>(<span class="cls">EnumType</span>.STRING)
+    <span class="kw">private</span> <span class="cls">ModelStatus</span> status;     <span class="cmt">// 模型状态</span>
+
+    <span class="ann">@ElementCollection</span>
+    <span class="kw">private</span> Map&lt;String, String&gt; metadata;  <span class="cmt">// 元数据</span>
+
+    <span class="kw">private</span> String dataVersion;      <span class="cmt">// 训练数据版本</span>
+    <span class="kw">private</span> String gitCommitHash;    <span class="cmt">// 代码版本</span>
+    <span class="kw">private</span> Instant createdAt;
+    <span class="kw">private</span> Instant promotedAt;
+}
+
+<span class="kw">public enum</span> <span class="cls">ModelStatus</span> {
+    REGISTERED,   <span class="cmt">// 已注册</span>
+    STAGING,      <span class="cmt">// 预发布</span>
+    PRODUCTION,   <span class="cmt">// 生产中</span>
+    ARCHIVED      <span class="cmt">// 已归档</span>
+}</div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 模型血缘追踪</h3>
+                <p>模型血缘（Model Lineage）回答的是<strong>"这个模型从哪里来"</strong>的问题。一条完整的血缘记录包括：</p>
+                <ul class="styled-list">
+                    <li><strong>基础模型</strong> -- 从哪个预训练模型开始（如 gpt-4、llama-3、qwen-2）</li>
+                    <li><strong>训练数据</strong> -- 使用了哪个版本的数据集，数据量和数据分布</li>
+                    <li><strong>训练配置</strong> -- 学习率、Epoch 数、Batch Size、LoRA rank 等超参数</li>
+                    <li><strong>评估结果</strong> -- 在哪些测试集上评估，各项指标得分</li>
+                </ul>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; 血缘追踪的工程实践</div>
+                    <p>在生产环境中，推荐使用<strong>三元组</strong>来标识模型血缘：(data_version, code_version, base_model_version)。这三个维度确保了实验的完全可复现性。即使一年后想复现某个模型的效果，只要这三个版本号不变，就能还原完整的训练环境。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 核心内容 3：A/B 测试与灰度发布 ==================== -->
+        <section class="section" id="content-3">
+            <h2 class="section-title">&#128196; 核心内容（第3节）：A/B 测试与灰度发布 -- 让数据说话</h2>
+
+            <div class="card">
+                <h3>&#128196; A/B 测试在 AI 系统中的特殊性</h3>
+                <p>传统软件的 A/B 测试关注的是"哪个版本的 UI 点击率更高"，而 AI 系统的 A/B 测试需要关注更多维度：</p>
+                <ul class="styled-list">
+                    <li><strong>质量维度</strong> -- 模型的回答是否更准确、更相关、更安全</li>
+                    <li><strong>延迟维度</strong> -- 新模型的推理延迟是否在可接受范围内</li>
+                    <li><strong>成本维度</strong> -- Token 消耗、API 调用成本是否有变化</li>
+                    <li><strong>用户体验维度</strong> -- 用户是否更满意、更愿意继续使用</li>
+                </ul>
+                <p style="margin-top: 12px;">AI 系统的 A/B 测试还有一个特殊挑战：<strong>评估指标的模糊性</strong>。传统软件的指标（点击率、转化率）是明确的，但 AI 系统的"回答质量"往往需要人工评估或 LLM-as-Judge 来打分。</p>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 分流策略</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4>用户级分流</h4>
+                        <p>同一个用户始终看到同一个模型版本。使用一致性哈希，确保用户在实验期间不会在不同版本间跳转。</p>
+                        <p style="margin-top: 8px;"><strong>适用场景</strong>：需要长期观察用户行为变化的实验。</p>
+                    </div>
+                    <div>
+                        <h4>请求级分流</h4>
+                        <p>同一个用户的不同请求可能被路由到不同模型。每次请求独立随机分配。</p>
+                        <p style="margin-top: 8px;"><strong>适用场景</strong>：快速收集大量对比数据的短期实验。</p>
+                    </div>
+                </div>
+                <div style="margin-top: 16px;">
+                    <h4>特征级分流</h4>
+                    <p>根据请求的特征（如问题类型、语言、用户等级）进行差异化分流。例如：简单问题走小模型，复杂问题走大模型。</p>
+                    <p style="margin-top: 8px;"><strong>适用场景</strong>：需要精细化控制模型分配的智能路由系统。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; A/B 测试服务实现</h3>
+
+                <div class="code-block"><span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">AbTestService</span> {
+
+    <span class="kw">private final</span> <span class="cls">TrafficRouter</span> trafficRouter;
+    <span class="kw">private final</span> <span class="cls">MetricsCollector</span> metrics;
+
+    <span class="kw">public</span> String <span class="fn">routeRequest</span>(String userId, String prompt) {
+        String variant = trafficRouter.<span class="fn">getVariant</span>(userId);
+
+        String response;
+        <span class="kw">long</span> startTime = <span class="cls">System</span>.currentTimeMillis();
+
+        <span class="kw">if</span> (<span class="str">"control"</span>.equals(variant)) {
+            response = <span class="fn">callModel</span>(<span class="str">"gpt-4"</span>, prompt);
+        } <span class="kw">else</span> {
+            response = <span class="fn">callModel</span>(<span class="str">"gpt-4-finetuned-v2"</span>, prompt);
+        }
+
+        <span class="kw">long</span> latency = <span class="cls">System</span>.currentTimeMillis() - startTime;
+
+        <span class="cmt">// 记录指标</span>
+        metrics.<span class="fn">record</span>(variant, <span class="cls">Map</span>.of(
+            <span class="str">"latency_ms"</span>, latency,
+            <span class="str">"token_count"</span>, <span class="fn">countTokens</span>(response),
+            <span class="str">"quality_score"</span>, <span class="fn">evaluateQuality</span>(prompt, response)
+        ));
+
+        <span class="kw">return</span> response;
+    }
+
+    <span class="kw">public</span> <span class="cls">AbTestResult</span> <span class="fn">getResults</span>(String experimentId) {
+        Map&lt;String, <span class="cls">VariantMetrics</span>&gt; variants =
+            metrics.<span class="fn">getVariants</span>(experimentId);
+
+        <span class="cmt">// 计算统计显著性</span>
+        <span class="kw">double</span> pValue = <span class="fn">calculatePValue</span>(
+            variants.get(<span class="str">"control"</span>),
+            variants.get(<span class="str">"treatment"</span>)
+        );
+
+        <span class="kw">return</span> <span class="cls">AbTestResult</span>.builder()
+            .experimentId(experimentId)
+            .variants(variants)
+            .pValue(pValue)
+            .isSignificant(pValue &lt; <span class="str">0.05</span>)
+            .recommendedWinner(
+                pValue &lt; <span class="str">0.05</span> ? <span class="fn">selectWinner</span>(variants) : <span class="str">"continue_testing"</span>
+            )
+            .build();
+    }
+}</div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 灰度发布策略</h3>
+                <p>灰度发布是 A/B 测试在生产环境中的实践，核心思想是<strong>渐进式放量</strong>：</p>
+
+                <div class="diagram"><span class="hl">灰度发布三阶段</span>
+
+<span class="hl">阶段 1: 金丝雀发布</span> (1-5% 流量)
+    <span class="arr">→</span> 将新模型暴露给少量用户
+    <span class="arr">→</span> 监控 24-48 小时
+    <span class="arr">→</span> 核心指标无异常才进入下一阶段
+
+<span class="hl">阶段 2: 渐进式扩量</span> (5% → 20% → 50%)
+    <span class="arr">→</span> 每个阶段观察 12-24 小时
+    <span class="arr">→</span> 任一阶段发现异常立即回滚
+    <span class="arr">→</span> 核心指标持续优于对照组
+
+<span class="hl">阶段 3: 全量切换</span> (100%)
+    <span class="arr">→</span> 新模型接管所有流量
+    <span class="arr">→</span> 旧模型保留在注册表中 30 天
+    <span class="arr">→</span> 随时可一键回滚</div>
+
+                <div class="warn-box">
+                    <div class="label">&#9888;&#65039; 灰度发布的红线</div>
+                    <p>在 AI 系统的灰度发布中，除了传统的错误率和延迟指标，还必须监控<strong>安全指标</strong>：有害内容生成率、幻觉率、信息泄露风险。一旦安全指标触达阈值，必须立即回滚，无需等待人工审批。安全红线不可妥协。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 核心内容 4：数据飞轮 ==================== -->
+        <section class="section" id="content-4">
+            <h2 class="section-title">&#128196; 核心内容（第4节）：数据飞轮 -- 让 Agent 越用越聪明</h2>
+
+            <div class="card">
+                <h3>&#128196; 数据飞轮的核心循环</h3>
+                <p>数据飞轮（Data Flywheel）是 MLOps 的核心引擎，其本质是一个<strong>正反馈循环</strong>：用户使用 Agent 产生数据，数据驱动模型改进，更好的模型吸引更多用户，更多用户产生更多数据。</p>
+
+                <div class="diagram"><span class="hl">数据飞轮闭环</span>
+
+<span class="hl">用户交互</span> <span class="arr">→</span> <span class="hl">日志收集</span> <span class="arr">→</span> <span class="hl">反馈分类</span> <span class="arr">→</span> <span class="hl">数据标注</span> <span class="arr">→</span> <span class="hl">模型训练</span> <span class="arr">→</span> <span class="hl">部署上线</span>
+  <span class="arr">↑</span>                                                              <span class="arr">↓</span>
+  <span class="arr">└──────────────────── 更好的用户体验 ←──────────────────────────────┘</span></div>
+
+                <p style="margin-top: 12px;">飞轮启动的关键是<strong>冷启动策略</strong>：在用户数据不足时，如何获得第一批有价值的训练数据？常见策略包括：</p>
+                <ul class="styled-list">
+                    <li><strong>种子数据</strong> -- 使用人工编写的高质量样本作为初始训练集</li>
+                    <li><strong>合成数据</strong> -- 使用强模型（如 GPT-4）为弱模型生成训练数据</li>
+                    <li><strong>迁移数据</strong> -- 从相似场景的已有数据中迁移</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 反馈信号采集</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4>显式反馈</h4>
+                        <p>用户主动提供的评价信号：</p>
+                        <ul class="styled-list">
+                            <li>点赞 / 点踩按钮</li>
+                            <li>评分（1-5 星）</li>
+                            <li>文字评价</li>
+                            <li>"这个回答有帮助吗？"</li>
+                        </ul>
+                        <p style="margin-top: 8px;"><strong>优点</strong>：信号明确，质量高。</p>
+                        <p><strong>缺点</strong>：覆盖率低（通常只有 1-5% 的交互会产生显式反馈）。</p>
+                    </div>
+                    <div>
+                        <h4>隐式反馈</h4>
+                        <p>从用户行为中推断的评价信号：</p>
+                        <ul class="styled-list">
+                            <li>回答后的停留时间（短 = 可能不满意）</li>
+                            <li>是否重新提问（重试 = 回答不好）</li>
+                            <li>是否采纳了建议（点击 = 有帮助）</li>
+                            <li>会话是否中途放弃（放弃 = 体验差）</li>
+                        </ul>
+                        <p style="margin-top: 8px;"><strong>优点</strong>：覆盖率高，无额外用户负担。</p>
+                        <p><strong>缺点</strong>：信号噪声大，需要大量数据才能提取有效模式。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 主动学习与自动标注</h3>
+                <p><strong>主动学习（Active Learning）</strong>是数据飞轮的"智能调度器"。它不是盲目地标注所有数据，而是<strong>智能选择最有价值的数据</strong>进行标注：</p>
+                <ul class="styled-list">
+                    <li><strong>不确定性采样</strong> -- 选择模型最不确定的样本（如两个选项概率接近的分类任务）</li>
+                    <li><strong>多样性采样</strong> -- 选择与已标注数据差异最大的样本，扩大数据覆盖范围</li>
+                    <li><strong>预期模型变化</strong> -- 选择标注后对模型改变最大的样本</li>
+                </ul>
+
+                <p style="margin-top: 16px;"><strong>自动标注</strong>则是用"强模型标注弱模型的训练数据"。例如：用 GPT-4 对用户问题进行质量评分，然后用这些评分数据训练一个轻量级的分类器，这个分类器可以直接在生产环境中运行，无需每次都调用 GPT-4。</p>
+
+                <div class="info-box">
+                    <div class="label">&#128218; 标注成本优化公式</div>
+                    <p>假设人工标注一条数据的成本是 $5，GPT-4 自动标注的成本是 $0.02。如果自动标注的准确率达到人工标注的 90%，那么用自动标注 + 10% 人工审核的方式，可以在保持质量的同时将标注成本降低 <strong>30 倍</strong>。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 数据飞轮服务实现</h3>
+
+                <div class="code-block"><span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">DataFlywheelService</span> {
+
+    <span class="kw">private final</span> <span class="cls">FeedbackRepository</span> feedbackRepo;
+    <span class="kw">private final</span> <span class="cls">DatasetBuilder</span> datasetBuilder;
+    <span class="kw">private final</span> <span class="cls">ModelTrainer</span> trainer;
+
+    <span class="cmt">// 收集用户反馈</span>
+    <span class="kw">public void</span> <span class="fn">collectFeedback</span>(String sessionId, String prompt,
+                                 String response, <span class="cls">FeedbackType</span> type) {
+        <span class="cls">FeedbackEvent</span> event = <span class="cls">FeedbackEvent</span>.builder()
+            .sessionId(sessionId)
+            .prompt(prompt)
+            .response(response)
+            .feedbackType(type)
+            .timestamp(<span class="cls">Instant</span>.now())
+            .build();
+        feedbackRepo.save(event);
+    }
+
+    <span class="cmt">// 自动触发重训练评估（每天检查一次）</span>
+    <span class="ann">@Scheduled</span>(fixedDelay = <span class="str">86400000</span>)
+    <span class="kw">public void</span> <span class="fn">evaluateRetraining</span>() {
+        <span class="kw">long</span> newFeedbackCount = feedbackRepo.<span class="fn">countSinceLastTraining</span>();
+        <span class="kw">double</span> avgScore = feedbackRepo.<span class="fn">getAverageScoreSinceLastTraining</span>();
+
+        <span class="kw">if</span> (newFeedbackCount >= <span class="str">1000</span> || avgScore &lt; <span class="str">0.7</span>) {
+            <span class="cmt">// 触发重训练 Pipeline</span>
+            <span class="cls">Dataset</span> dataset = datasetBuilder.<span class="fn">buildFromFeedback</span>(
+                feedbackRepo.<span class="fn">getSinceLastTraining</span>()
+            );
+            trainer.<span class="fn">submitTrainingJob</span>(dataset);
+        }
+    }
+}</div>
+
+                <div class="code-block"><span class="cmt">// 数据集构建器 -- 从反馈到训练数据</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">DatasetBuilder</span> {
+
+    <span class="kw">private final</span> <span class="cls">AnnotationService</span> annotationService;
+    <span class="kw">private final</span> <span class="cls">DataQualityFilter</span> qualityFilter;
+
+    <span class="kw">public</span> <span class="cls">Dataset</span> <span class="fn">buildFromFeedback</span>(List&lt;<span class="cls">FeedbackEvent</span>&gt; feedbacks) {
+        <span class="cmt">// 1. 过滤低质量数据</span>
+        List&lt;<span class="cls">FeedbackEvent</span>&gt; filtered = qualityFilter.<span class="fn">filter</span>(feedbacks);
+
+        <span class="cmt">// 2. 对正面反馈：prompt + response 作为 SFT 训练对</span>
+        List&lt;<span class="cls">TrainingPair</span>&gt; positivePairs = filtered.stream()
+            .filter(f -&gt; f.getFeedbackType() == <span class="cls">FeedbackType</span>.POSITIVE)
+            .map(f -&gt; <span class="kw">new</span> <span class="cls">TrainingPair</span>(f.getPrompt(), f.getResponse()))
+            .toList();
+
+        <span class="cmt">// 3. 对负面反馈：使用强模型重新生成更好的回答</span>
+        List&lt;<span class="cls">TrainingPair</span>&gt; correctedPairs = filtered.stream()
+            .filter(f -&gt; f.getFeedbackType() == <span class="cls">FeedbackType</span>.NEGATIVE)
+            .map(f -&gt; annotationService.<span class="fn">generateBetterResponse</span>(f))
+            .toList();
+
+        <span class="cmt">// 4. 合并数据集</span>
+        List&lt;<span class="cls">TrainingPair</span>&gt; allPairs = <span class="kw">new</span> ArrayList&lt;&gt;(positivePairs);
+        allPairs.addAll(correctedPairs);
+
+        <span class="kw">return</span> <span class="cls">Dataset</span>.builder()
+            .name(<span class="str">"flywheel-"</span> + <span class="cls">Instant</span>.now().toEpochMilli())
+            .pairs(allPairs)
+            .build();
+    }
+}</div>
+            </div>
+        </section>
+
+        <!-- ==================== 核心内容 5：监控告警与自动回滚 ==================== -->
+        <section class="section" id="content-5">
+            <h2 class="section-title">&#128196; 核心内容（第5节）：监控告警与自动回滚 -- 生产环境的守护神</h2>
+
+            <div class="card">
+                <h3>&#128196; AI 系统特有的监控指标</h3>
+                <p>传统软件监控关注的是"系统是否正常运行"，AI 系统还需要关注"模型是否还在正确地工作"。AI 系统特有的三大监控维度：</p>
+
+                <table>
+                    <tr><th>监控维度</th><th>含义</th><th>检测方法</th></tr>
+                    <tr><td><strong>数据漂移</strong></td><td>输入数据的分布发生了变化</td><td>PSI、KL 散度、KS 检验</td></tr>
+                    <tr><td><strong>模型漂移</strong></td><td>模型预测结果的分布发生了变化</td><td>预测分布对比、置信度监控</td></tr>
+                    <tr><td><strong>性能退化</strong></td><td>模型在关键指标上持续下降</td><td>滑动窗口均值、趋势检测</td></tr>
+                </table>
+
+                <div class="warn-box">
+                    <div class="label">&#9888;&#65039; 数据漂移 vs 模型漂移</div>
+                    <p>数据漂移（Data Drift）是指输入数据的分布发生了变化，但模型本身的参数没有变。比如用户突然开始问很多关于新产品的问題，而模型训练时没有见过这些产品。模型漂移（Concept Drift）是指数据和标签之间的关系发生了变化。比如"退款"这个词以前总是正面情绪（"退款很顺利"），现在变成了负面情绪（"退款太慢了"）。两者都会导致模型效果下降，但应对策略不同。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 漂移检测算法</h3>
+                <p>三种最常用的漂移检测指标：</p>
+
+                <div class="grid-2">
+                    <div>
+                        <h4>PSI（Population Stability Index）</h4>
+                        <p>衡量两个分布之间差异的指标。PSI &lt; 0.1 表示无显著漂移，0.1-0.25 表示中度漂移，&gt; 0.25 表示严重漂移。</p>
+                    </div>
+                    <div>
+                        <h4>KL 散度</h4>
+                        <p>衡量两个概率分布之间差异的信息论指标。KL 散度越大，两个分布的差异越大。注意 KL 散度是非对称的。</p>
+                    </div>
+                </div>
+                <div style="margin-top: 16px;">
+                    <h4>KS 检验（Kolmogorov-Smirnov Test）</h4>
+                    <p>非参数检验方法，比较两个样本的累积分布函数。KS 统计量越大，两个分布的差异越显著。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 漂移检测服务实现</h3>
+
+                <div class="code-block"><span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">DriftDetector</span> {
+
+    <span class="kw">public</span> <span class="cls">DriftReport</span> <span class="fn">checkDataDrift</span>(List&lt;<span class="cls">Vector</span>&gt; referenceData,
+                                        List&lt;<span class="cls">Vector</span>&gt; currentData) {
+        <span class="cmt">// 计算 PSI (Population Stability Index)</span>
+        <span class="kw">double</span> psi = <span class="fn">calculatePSI</span>(referenceData, currentData);
+
+        <span class="cmt">// 计算特征级漂移</span>
+        Map&lt;String, <span class="cls">Double</span>&gt; featureDrift = <span class="kw">new</span> HashMap&lt;&gt;();
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="str">0</span>; i &lt; referenceData.get(<span class="str">0</span>).dimensions(); i++) {
+            <span class="kw">double</span> ks = <span class="fn">calculateKS</span>(
+                <span class="fn">extractFeature</span>(referenceData, i),
+                <span class="fn">extractFeature</span>(currentData, i)
+            );
+            featureDrift.put(<span class="str">"feature_"</span> + i, ks);
+        }
+
+        <span class="kw">return</span> <span class="cls">DriftReport</span>.builder()
+            .overallPSI(psi)
+            .featureDrift(featureDrift)
+            .isDrifting(psi &gt; <span class="str">0.2</span>)  <span class="cmt">// PSI &gt; 0.2 表示显著漂移</span>
+            .severity(psi &gt; <span class="str">0.25</span> ? <span class="str">"HIGH"</span> : psi &gt; <span class="str">0.1</span> ? <span class="str">"MEDIUM"</span> : <span class="str">"LOW"</span>)
+            .build();
+    }
+
+    <span class="kw">private double</span> <span class="fn">calculatePSI</span>(List&lt;<span class="cls">Vector</span>&gt; reference,
+                                List&lt;<span class="cls">Vector</span>&gt; current) {
+        <span class="kw">int</span> bins = <span class="str">10</span>;
+        <span class="kw">double</span>[] refDist = <span class="fn">histogram</span>(reference, bins);
+        <span class="kw">double</span>[] curDist = <span class="fn">histogram</span>(current, bins);
+
+        <span class="kw">double</span> psi = <span class="str">0</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="str">0</span>; i &lt; bins; i++) {
+            <span class="kw">if</span> (refDist[i] &gt; <span class="str">0</span> &amp;&amp; curDist[i] &gt; <span class="str">0</span>) {
+                psi += (curDist[i] - refDist[i])
+                    * <span class="cls">Math</span>.log(curDist[i] / refDist[i]);
+            }
+        }
+        <span class="kw">return</span> psi;
+    }
+}</div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 自动回滚策略</h3>
+                <p>自动回滚是 MLOps 的"安全气囊"。当模型在生产环境中出现异常时，系统能自动将流量切换回上一个稳定版本。</p>
+
+                <div class="code-block"><span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">AutoRollbackService</span> {
+
+    <span class="kw">private final</span> <span class="cls">DriftDetector</span> driftDetector;
+    <span class="kw">private final</span> <span class="cls">MetricsCollector</span> metrics;
+    <span class="kw">private final</span> <span class="cls">ModelRegistryService</span> registryService;
+    <span class="kw">private final</span> <span class="cls">AlertService</span> alertService;
+
+    <span class="ann">@Scheduled</span>(fixedRate = <span class="str">300000</span>) <span class="cmt">// 每 5 分钟检查一次</span>
+    <span class="kw">public void</span> <span class="fn">checkAndRollback</span>() {
+        <span class="cmt">// 1. 检查模型性能指标</span>
+        <span class="kw">double</span> currentAccuracy = metrics.<span class="fn">getSlidingWindowAccuracy</span>(
+            <span class="cls">Duration</span>.ofHours(<span class="str">1</span>)
+        );
+        <span class="kw">double</span> baselineAccuracy = metrics.<span class="fn">getBaselineAccuracy</span>();
+
+        <span class="cmt">// 2. 检查数据漂移</span>
+        <span class="cls">DriftReport</span> driftReport = driftDetector.<span class="fn">checkDataDrift</span>(
+            metrics.<span class="fn">getReferenceData</span>(),
+            metrics.<span class="fn">getCurrentData</span>(<span class="cls">Duration</span>.ofHours(<span class="str">1</span>))
+        );
+
+        <span class="cmt">// 3. 判断是否需要回滚</span>
+        <span class="kw">boolean</span> accuracyDropped = (baselineAccuracy - currentAccuracy) &gt; <span class="str">0.05</span>;
+        <span class="kw">boolean</span> severeDrift = <span class="str">"HIGH"</span>.equals(driftReport.getSeverity());
+
+        <span class="kw">if</span> (accuracyDropped || severeDrift) {
+            <span class="cmt">// 4. 执行自动回滚</span>
+            <span class="cls">ModelVersion</span> previousVersion = registryService
+                .<span class="fn">getPreviousProductionVersion</span>();
+
+            <span class="kw">if</span> (previousVersion != <span class="kw">null</span>) {
+                registryService.<span class="fn">promoteToProduction</span>(
+                    previousVersion.getName(),
+                    previousVersion.getVersion()
+                );
+
+                <span class="cmt">// 5. 发送告警</span>
+                alertService.<span class="fn">sendAlert</span>(
+                    <span class="cls">AlertLevel</span>.CRITICAL,
+                    <span class="cls">String</span>.format(
+                        <span class="str">"模型已自动回滚: %s → %s. 原因: %s"</span>,
+                        <span class="fn">getCurrentModelId</span>(),
+                        previousVersion.getVersion(),
+                        accuracyDropped ? <span class="str">"精度下降"</span> : <span class="str">"数据漂移"</span>
+                    )
+                );
+            }
+        }
+    }
+}</div>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; 回滚策略的最佳实践</div>
+                    <p>自动回滚的关键是<strong>渐进而非突变</strong>。推荐策略：(1) 第一次异常 -- 发送告警，人工确认；(2) 第二次异常 -- 自动回滚 50% 流量；(3) 第三次异常 -- 全量回滚。同时，回滚后必须保留现场（日志、指标快照、输入样本），以便事后分析根因。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 核心内容 6：MLOps 在 Spring AI 中的集成实践 ==================== -->
+        <section class="section" id="content-6">
+            <h2 class="section-title">&#128196; 核心内容（第6节）：MLOps 在 Spring AI 中的集成实践</h2>
+
+            <div class="card">
+                <h3>&#128196; 端到端 MLOps 架构</h3>
+                <p>将前面学到的所有组件整合到一个完整的 Spring AI MLOps 架构中：</p>
+
+                <div class="diagram"><span class="hl">Spring AI MLOps 端到端架构</span>
+
+<span class="hl">┌─────────────────────────────────────────────────────────────┐</span>
+│                     <span class="hl">用户交互层</span>                              │
+│   Spring AI ChatClient / REST API / WebSocket               │
+<span class="hl">└─────────────────────────┬───────────────────────────────────┘</span>
+                          <span class="arr">↓</span>
+<span class="hl">┌─────────────────────────────────────────────────────────────┐</span>
+│                     <span class="hl">流量路由层</span>                              │
+│   A/B Test Router / Canary Controller / Feature Router      │
+<span class="hl">└────────┬──────────────────────────────────┬────────────────┘</span>
+         <span class="arr">↓</span>                                       <span class="arr">↓</span>
+<span class="hl">┌──────────────┐</span>                     <span class="hl">┌──────────────┐</span>
+│  <span class="hl">Model v1</span>     │                     │  <span class="hl">Model v2</span>     │
+│  (生产中)     │                     │  (实验中)     │
+<span class="hl">└──────┬───────┘</span>                     <span class="hl">└──────┬───────┘</span>
+       <span class="arr">↓</span>                                       <span class="arr">↓</span>
+<span class="hl">┌─────────────────────────────────────────────────────────────┐</span>
+│                     <span class="hl">监控收集层</span>                              │
+│   MetricsCollector / DriftDetector / FeedbackCollector      │
+<span class="hl">└─────────────────────────┬───────────────────────────────────┘</span>
+                          <span class="arr">↓</span>
+<span class="hl">┌─────────────────────────────────────────────────────────────┐</span>
+│                     <span class="hl">数据飞轮层</span>                              │
+│   DatasetBuilder / AnnotationService / ModelTrainer          │
+<span class="hl">└─────────────────────────┬───────────────────────────────────┘</span>
+                          <span class="arr">↓</span>
+<span class="hl">┌─────────────────────────────────────────────────────────────┐</span>
+│                     <span class="hl">模型管理层</span>                              │
+│   ModelRegistry / ABTestService / AutoRollbackService        │
+<span class="hl">└─────────────────────────────────────────────────────────────┘</span></div>
+            </div>
+
+            <div class="card">
+                <h3>&#128196; 关键集成点</h3>
+                <ul class="styled-list">
+                    <li><strong>Spring Boot Actuator</strong> -- 暴露模型健康检查端点、性能指标端点，与 Prometheus + Grafana 集成</li>
+                    <li><strong>Spring Events</strong> -- 使用 ApplicationEvent 发布反馈事件，解耦数据收集和处理逻辑</li>
+                    <li><strong>Spring Scheduling</strong> -- 使用 @Scheduled 定时执行漂移检测、数据飞轮评估等后台任务</li>
+                    <li><strong>Spring Integration</strong> -- 构建数据处理管道，将用户日志流转到标注系统和训练系统</li>
+                    <li><strong>Spring Cloud Config</strong> -- 集中管理模型配置、灰度比例、告警阈值等动态配置</li>
+                </ul>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; MLOps 成熟度模型</div>
+                    <p>MLOps 的成熟度分为三个级别：<strong>MLOps Level 0</strong>（手动流程）-- 模型训练和部署全靠手动操作；<strong>MLOps Level 1</strong>（自动化 Pipeline）-- 训练和部署流水线自动化，但需要人工触发；<strong>MLOps Level 2</strong>（完全自动化）-- 数据飞轮自动运转，模型自动重训练、自动评估、自动部署、自动回滚。大多数团队从 Level 0 开始，目标是在 6-12 个月内达到 Level 1。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 章节小结 ==================== -->
+        <section class="section" id="summary">
+            <h2 class="section-title">&#128214; 章节小结</h2>
+            <div class="card">
+                <p>本章我们学习了 AI MLOps 与数据飞轮的完整体系：</p>
+                <ul class="styled-list">
+                    <li><strong>MLOps 基础</strong> -- MLOps 是将 DevOps 理念应用于 AI 系统的工程实践，核心是"持续进化"而非"一次性部署"。它与传统 DevOps 的区别在于管理的对象从代码扩展到了模型 + 数据 + 代码</li>
+                    <li><strong>模型版本管理</strong> -- 通过模型注册表管理模型的全生命周期（注册→预发布→生产→归档），使用三件套（语义版本 + 数据版本 + 代码版本）确保可追溯性和可复现性</li>
+                    <li><strong>A/B 测试与灰度发布</strong> -- 通过用户级/请求级/特征级分流策略，让数据驱动模型选择。灰度发布采用金丝雀→渐进式→全量的三阶段策略，确保安全上线</li>
+                    <li><strong>数据飞轮</strong> -- 用户交互→数据收集→反馈分类→数据标注→模型训练→部署上线的闭环。通过主动学习和自动标注降低成本，通过显式+隐式反馈提升数据覆盖率</li>
+                    <li><strong>监控告警与自动回滚</strong> -- 数据漂移（PSI、KL 散度、KS 检验）、模型漂移、性能退化三维度监控。自动回滚策略：渐进而非突变，保留现场以便分析</li>
+                    <li><strong>Spring AI 集成</strong> -- 通过 Actuator、Events、Scheduling、Integration、Cloud Config 等组件，将 MLOps 实践无缝集成到 Spring Boot 生态中</li>
+                </ul>
+
+                <div class="info-box">
+                    <div class="label">&#128161; 核心理念</div>
+                    <p>MLOps 的终极目标不是"部署模型"，而是<strong>"构建一个让模型持续进化的系统"</strong>。数据飞轮一旦转起来，Agent 就不再是静态的工具，而是一个会学习、会成长的智能伙伴。记住：最好的模型不是一次性训练出来的，而是在生产环境中持续打磨出来的。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 面试高频题 ==================== -->
+        <section class="section" id="interview">
+            <h2 class="section-title">&#127891; 面试高频题</h2>
+
+            <div class="interview-box">
+                <div class="label">Q1：MLOps 和传统 DevOps 有什么区别？AI 系统的 MLOps 有什么特殊挑战？</div>
+                <p>核心区别有三点：(1) <strong>资产管理</strong>：DevOps 管理代码，MLOps 管理代码 + 数据 + 模型三者，版本管理更复杂；(2) <strong>测试重点</strong>：DevOps 侧重功能和集成测试，MLOps 还需要数据验证、模型评估和漂移检测；(3) <strong>反馈闭环</strong>：DevOps 的反馈是修复 Bug，MLOps 的反馈是收集数据→重训练→重新部署，周期更长、成本更高。AI 系统的特殊挑战是数据漂移和模型退化 -- 模型上线后效果会随时间自然下降，需要持续监控和更新。</p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">Q2：什么是模型版本管理？为什么不能只用 Git 管理模型？</div>
+                <p>模型版本管理是管理模型从注册到退役的全生命周期。Git 无法完全替代的原因：(1) <strong>体积问题</strong>：模型权重文件通常在 GB 级别，不适合放在 Git 仓库中；(2) <strong>元数据</strong>：模型需要记录训练数据版本、超参数、评估指标等元数据，Git 只记录代码变更；(3) <strong>阶段流转</strong>：模型需要从注册→预发布→生产→归档的生命周期管理，Git 没有这个概念；(4) <strong>审批流程</strong>：模型上线通常需要人工审核，需要工作流引擎支持。推荐使用 MLflow Model Registry 或自研注册表管理模型。</p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">Q3：A/B 测试中如何判断结果是否具有统计显著性？样本量如何确定？</div>
+                <p>判断统计显著性通常使用<strong>假设检验</strong>：(1) 设定零假设（两个模型无差异）和备择假设；(2) 选择检验方法（连续变量用 t 检验，比例变量用卡方检验或 z 检验）；(3) 计算 p 值，通常以 0.05 为显著性阈值。样本量确定需要考虑：(1) 预期效应量 -- 效应越小需要越多样本；(2) 显著性水平 -- 通常取 0.05；(3) 统计功效 -- 通常取 0.8。可以使用 A/B 测试样本量计算器提前估算。在 AI 系统中，由于评估指标（如回答质量）方差较大，通常需要比传统 A/B 测试更多的样本量。</p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">Q4：数据飞轮的冷启动问题如何解决？如何在用户数据不足时启动飞轮？</div>
+                <p>冷启动是数据飞轮最困难的阶段。常用策略：(1) <strong>种子数据</strong> -- 人工编写高质量样本作为初始训练集，确保覆盖核心场景；(2) <strong>合成数据</strong> -- 使用强模型（如 GPT-4）为弱模型生成训练数据（Self-Instruct 方法）；(3) <strong>迁移学习</strong> -- 从相似场景的已有数据中迁移，如从通用对话数据迁移到客服场景；(4) <strong>规则兜底</strong> -- 在数据不足时用规则引擎补充，确保基本功能可用；(5) <strong>人工在环</strong> -- 初期采用"AI 建议 + 人工确认"模式，同时积累训练数据。关键是不要追求完美，先让飞轮转起来，哪怕初始质量一般。</p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">Q5：如何设计一个完整的 AI 系统监控方案？需要监控哪些关键指标？</div>
+                <p>完整的 AI 监控方案应覆盖四层：(1) <strong>基础设施层</strong> -- CPU/GPU 利用率、内存、网络延迟、服务可用性；(2) <strong>模型性能层</strong> -- 推理延迟（P50/P95/P99）、吞吐量、Token 消耗、错误率；(3) <strong>模型质量层</strong> -- 数据漂移（PSI）、模型漂移（预测分布变化）、精度退化（滑动窗口均值）；(4) <strong>业务指标层</strong> -- 用户满意度、任务完成率、用户留存率。告警分级：LOW（记录日志）、MEDIUM（通知团队）、HIGH（自动回滚 + 紧急通知）、CRITICAL（全量回滚 + 值班电话）。关键原则：宁可多报不可漏报，误报可以后续优化，漏报可能导致严重后果。</p>
+            </div>
+        </section>
+
+        <!-- ==================== 动手练习 ==================== -->
+        <section class="section" id="practice">
+            <h2 class="section-title">&#127919; 动手练习</h2>
+
+            <div class="try-box">
+                <div class="label">练习 1：构建模型注册表</div>
+                <p>设计并实现一个完整的模型注册表系统：</p>
+                <ul class="styled-list">
+                    <li>使用 Spring Boot + JPA 设计模型版本的数据模型（ModelVersion、ModelArtifact、TrainingRun）</li>
+                    <li>实现模型注册、阶段流转（注册→预发布→生产→归档）的 API</li>
+                    <li>实现模型血缘追踪：记录训练数据版本、代码版本、基础模型</li>
+                    <li>实现模型对比功能：给定两个版本，对比它们的评估指标</li>
+                    <li>添加模型回滚功能：一键将生产环境切换到上一个版本</li>
+                </ul>
+                <p style="margin-top: 12px;"><strong>进阶</strong>：集成 MLflow 的 Model Registry，对比自研方案和 MLflow 方案的优劣。</p>
+            </div>
+
+            <div class="try-box">
+                <div class="label">练习 2：实现 A/B 测试框架</div>
+                <p>为 Spring AI Agent 构建一个轻量级的 A/B 测试框架：</p>
+                <ul class="styled-list">
+                    <li>实现用户级分流策略：基于用户 ID 的一致性哈希，确保同一用户始终看到同一模型版本</li>
+                    <li>实现请求指标收集：延迟、Token 消耗、回答质量（使用 LLM-as-Judge）</li>
+                    <li>实现统计显著性检验：使用 t 检验判断两个版本是否有显著差异</li>
+                    <li>实现灰度发布控制器：支持金丝雀→渐进式→全量的自动化切换</li>
+                    <li>添加安全红线：当错误率超过阈值时自动回滚</li>
+                </ul>
+                <p style="margin-top: 12px;"><strong>对比实验</strong>：用你自己实现的框架对两个不同 Prompt 模板进行 A/B 测试，验证哪个模板的回答质量更高。</p>
+            </div>
+
+            <div class="try-box">
+                <div class="label">练习 3：构建数据飞轮闭环</div>
+                <p>综合本章所学技术，构建一个完整的数据飞轮系统：</p>
+                <ul class="styled-list">
+                    <li>设计反馈收集 API：支持点赞/点踩显式反馈，以及停留时间、重试率等隐式反馈</li>
+                    <li>实现数据质量过滤：自动过滤过短、重复、无意义的反馈数据</li>
+                    <li>实现自动标注：使用 GPT-4 对负面反馈生成更好的回答作为训练数据</li>
+                    <li>实现重训练触发器：基于反馈数量和质量分数自动判断是否需要重训练</li>
+                    <li>实现漂移检测：定期计算 PSI 指标，当检测到漂移时发送告警</li>
+                    <li>添加 Grafana 仪表板：可视化展示飞轮各项指标的趋势</li>
+                </ul>
+                <p style="margin-top: 12px;"><strong>挑战</strong>：实现完整的闭环自动化 -- 从反馈收集到模型更新到灰度发布，全程无需人工干预。</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p><a href="../springai-learning-map.html">&#8592; 返回学习地图</a></p>
+        <p style="margin-top: 8px;">第 31 章：AI MLOps 与数据飞轮 | Spring AI 学习手册</p>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const pct = (document.documentElement.scrollTop / (document.documentElement.scrollHeight - document.documentElement.clientHeight)) * 100;
+            document.querySelector('.progress-bar').style.cssText = `background: linear-gradient(90deg, var(--primary) ${pct}%, var(--bg-card) ${pct}%)`;
+        });
+        document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+            e.preventDefault();
+            const t = document.querySelector(a.getAttribute('href'));
+            if (t) t.scrollIntoView({ behavior: 'smooth' });
+        }));
+        document.getElementById('navToggle').addEventListener('click', () => document.querySelector('.nav').classList.toggle('open'));
+        const secs = document.querySelectorAll('.section[id]');
+        const navA = document.querySelectorAll('.nav-links a');
+        const obs = new IntersectionObserver(es => es.forEach(e => {
+            if (e.isIntersecting) {
+                const id = e.target.getAttribute('id');
+                navA.forEach(a => { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
+            }
+        }), { rootMargin: '-20% 0px -70% 0px' });
+        secs.forEach(s => obs.observe(s));
+    </script>
+</body>
+</html>
