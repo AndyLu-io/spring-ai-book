@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 伦理与治理 - Spring AI 学习手册</title>
+    <style>
+        /* === 统一设计令牌 === */
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --spring: #6DB33F;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --bg-nav: rgba(15, 23, 42, 0.98);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --border-light: #475569;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-spring: linear-gradient(135deg, #6DB33F 0%, #5A9A33 100%);
+            --nav-width: 260px;
+            --nav-padding-x: 16px;
+            --nav-padding-top: 20px;
+            --nav-item-height: 40px;
+            --content-max-width: 920px;
+            --content-padding: 48px;
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: 0.15s var(--ease-smooth);
+            --transition-normal: 0.25s var(--ease-smooth);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.8;
+            padding-left: var(--nav-width);
+            min-height: 100vh;
+        }
+
+        .bg-animation {
+            position: fixed; top: 0; left: var(--nav-width); right: 0; bottom: 0;
+            pointer-events: none; z-index: -1; overflow: hidden;
+        }
+        .bg-animation::before, .bg-animation::after {
+            content: ''; position: absolute; border-radius: 50%;
+            filter: blur(100px); opacity: 0.12;
+            animation: bg-drift 25s ease-in-out infinite;
+        }
+        .bg-animation::before { width: 500px; height: 500px; background: var(--primary); top: -150px; right: -150px; }
+        .bg-animation::after { width: 400px; height: 400px; background: var(--secondary); bottom: -150px; left: 10%; animation-delay: -12s; }
+        @keyframes bg-drift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.05); }
+            66% { transform: translate(-20px, 30px) scale(0.95); }
+        }
+
+        .progress-bar {
+            position: fixed; top: 0; left: var(--nav-width); right: 0;
+            height: 3px; background: var(--bg-card); z-index: 1000;
+        }
+        .progress-bar::after {
+            content: ''; position: absolute; left: 0; top: 0; height: 100%;
+            width: 0%; background: var(--gradient-1);
+            transition: width 0.08s linear; border-radius: 0 2px 2px 0;
+        }
+
+        .nav {
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: var(--nav-width); background: var(--bg-nav);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid var(--border);
+            z-index: 1001; display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .nav::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 2px; background: var(--gradient-1); opacity: 0.8;
+        }
+        .nav-content {
+            display: flex; flex-direction: column; height: 100%;
+            overflow-y: auto; overflow-x: hidden;
+            padding: var(--nav-padding-top) var(--nav-padding-x);
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .nav-content::-webkit-scrollbar { width: 4px; }
+        .nav-content::-webkit-scrollbar-track { background: transparent; }
+        .nav-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .nav-content::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+        .nav-logo {
+            font-size: 1.25rem; font-weight: 700;
+            background: var(--gradient-spring); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 2px; letter-spacing: -0.02em;
+        }
+        .nav-sub { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.02em; }
+        .nav-divider { height: 1px; background: var(--border); margin: 16px 0; opacity: 0.6; }
+        .nav-section {
+            font-size: 0.68rem; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1.2px;
+            margin: 16px 0 8px 8px; opacity: 0.7;
+        }
+        .nav-links { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+        .nav-links a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 12px; height: var(--nav-item-height);
+            color: var(--text-secondary); text-decoration: none;
+            border-radius: 8px; border-left: 3px solid transparent;
+            transition: all var(--transition-fast); font-size: 0.85rem;
+            white-space: nowrap; position: relative;
+        }
+        .nav-links a:hover {
+            color: var(--text-primary); background: rgba(99, 102, 241, 0.08);
+            border-left-color: rgba(99, 102, 241, 0.4);
+        }
+        .nav-links a.active {
+            color: var(--primary-light); background: rgba(99, 102, 241, 0.12);
+            border-left-color: var(--primary); font-weight: 500;
+        }
+        .nav-links a.active::after {
+            content: ''; position: absolute; right: 8px;
+            width: 6px; height: 6px; background: var(--primary);
+            border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .nav-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+        .nav-back {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 12px; color: var(--text-muted); text-decoration: none;
+            font-size: 0.85rem; border-radius: 8px;
+            transition: all var(--transition-fast);
+        }
+        .nav-back:hover { color: var(--primary-light); background: rgba(99, 102, 241, 0.08); }
+
+        .nav-toggle {
+            display: none; position: fixed; top: 12px; left: 12px;
+            width: 42px; height: 42px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 10px;
+            cursor: pointer; z-index: 1002; align-items: center;
+            justify-content: center; color: var(--text-primary);
+            transition: all var(--transition-fast);
+        }
+        .nav-toggle:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+        .nav-toggle span { display: block; width: 18px; height: 2px; background: currentColor; position: relative; transition: all var(--transition-fast); }
+        .nav-toggle span::before, .nav-toggle span::after { content: ''; position: absolute; left: 0; width: 100%; height: 2px; background: currentColor; transition: all var(--transition-fast); }
+        .nav-toggle span::before { top: -6px; }
+        .nav-toggle span::after { bottom: -6px; }
+        .nav-toggle.active span { background: transparent; }
+        .nav-toggle.active span::before { top: 0; transform: rotate(45deg); }
+        .nav-toggle.active span::after { bottom: 0; transform: rotate(-45deg); }
+
+        .hero {
+            padding: 80px var(--content-padding) 50px;
+            border-bottom: 1px solid var(--border); position: relative;
+        }
+        .hero::after {
+            content: ''; position: absolute; bottom: 0;
+            left: var(--content-padding); right: var(--content-padding);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.3;
+        }
+        .hero-badge {
+            display: inline-block; padding: 6px 16px;
+            background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px; font-size: 0.8rem; color: var(--primary-light);
+            margin-bottom: 16px; font-weight: 500;
+        }
+        .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 12px; line-height: 1.3; letter-spacing: -0.02em; }
+        .hero-subtitle { font-size: 1.05rem; color: var(--text-secondary); max-width: 700px; }
+        .hero-meta { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+        .meta-item { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-muted); }
+
+        .container { max-width: var(--content-max-width); margin: 0 auto; padding: 40px var(--content-padding) 80px; }
+        .section { scroll-margin-top: 2rem; margin-bottom: 56px; }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .card h3 { font-size: 1.15rem; margin-bottom: 12px; color: var(--primary-light); }
+        .card p, .card li { color: var(--text-secondary); font-size: 0.95rem; }
+        .card h4 { color: var(--text-primary); margin: 16px 0 8px; font-size: 1rem; }
+        .styled-list { list-style: none; }
+        .styled-list li { position: relative; padding: 8px 0 8px 24px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+        .styled-list li:last-child { border-bottom: none; }
+        .styled-list li::before { content: ''; position: absolute; left: 0; top: 16px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; }
+
+        .code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; overflow-x: auto; font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.85rem; line-height: 1.7; color: #c9d1d9; white-space: pre; }
+        .code-block .cmt { color: #8b949e; }
+        .code-block .kw { color: #ff7b72; }
+        .code-block .str { color: #a5d6ff; }
+        .code-block .ann { color: #d2a8ff; }
+        .code-block .cls { color: #79c0ff; }
+        .code-block .fn { color: #d2a8ff; }
+
+        .tip-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .tip-box .label { font-weight: 600; color: var(--success); margin-bottom: 6px; }
+        .warn-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .warn-box .label { font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+        .info-box { background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .info-box .label { font-weight: 600; color: var(--secondary); margin-bottom: 6px; }
+        .interview-box { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .interview-box .label { font-weight: 600; color: #a78bfa; margin-bottom: 6px; }
+        .try-box { background: rgba(99, 102, 241, 0.08); border: 1px dashed var(--primary); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+        .try-box .label { font-weight: 600; color: var(--primary-light); margin-bottom: 6px; }
+
+        .diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; font-family: 'SF Mono', 'Monaco', 'Menlo', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+        .diagram .hl { color: var(--primary-light); font-weight: 600; }
+        .diagram .arr { color: var(--secondary); }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .tag { padding: 4px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; font-size: 0.8rem; color: var(--primary-light); }
+
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+        th { background: rgba(99, 102, 241, 0.15); padding: 12px; text-align: left; color: var(--primary-light); border: 1px solid var(--border); }
+        td { padding: 10px 12px; border: 1px solid var(--border); color: var(--text-secondary); }
+
+        .footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+        .footer a { color: var(--primary-light); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            :root { --nav-width: 280px; --content-padding: 20px; }
+            body { padding-left: 0; }
+            .nav { transform: translateX(-100%); box-shadow: none; transition: transform 0.3s var(--ease-smooth); }
+            .nav.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4); }
+            .nav-toggle { display: flex; }
+            .progress-bar { left: 0; }
+            .bg-animation { left: 0; }
+            .hero { padding-top: 80px; }
+            .hero h1 { font-size: 1.8rem; }
+            .hero-meta { flex-direction: column; gap: 12px; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <button class="nav-toggle" id="navToggle">&#9776;</button>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="nav-logo">Spring AI</div>
+            <div class="nav-section">第一阶段：基础入门</div>
+            <div class="nav-links">
+                <a href="ch01-foundation.html">第1章 基础准备</a>
+                <a href="ch02-springai-intro.html">第2章 Spring AI 入门</a>
+                <a href="ch03-prompt.html">第3章 Prompt 工程</a>
+                <a href="ch04-rag.html">第4章 RAG 检索增强</a>
+            </div>
+            <div class="nav-section">第二阶段：核心深化</div>
+            <div class="nav-links">
+                <a href="ch05-vector-db.html">第5章 向量数据库</a>
+                <a href="ch06-advanced.html">第6章 高级特性</a>
+                <a href="ch07-agent.html">第7章 Agent 智能体</a>
+                <a href="ch08-agent-patterns.html">第8章 Agent 模式</a>
+            </div>
+            <div class="nav-section">第三阶段：Agent核心能力</div>
+            <div class="nav-links">
+                <a href="ch09-advanced-rag.html">第9章 高级 RAG</a>
+                <a href="ch10-agent-memory.html">第10章 Agent 记忆系统</a>
+                <a href="ch11-multimodal-agent.html">第11章 多模态 Agent</a>
+                <a href="ch12-agent-planning.html">第12章 Agent 规划推理</a>
+                <a href="ch13-agent-safety.html">第13章 Agent 安全防护</a>
+                <a href="ch14-ai-ethics.html" class="active">第14章 AI 伦理与治理</a>
+            </div>
+            <div class="nav-section">第四阶段：评估与优化</div>
+            <div class="nav-links">
+                <a href="ch15-agent-eval.html">第15章 Agent 评估测试</a>
+                <a href="ch16-llm-testing.html">第16章 LLM 应用测试</a>
+                <a href="ch17-prompt-advanced.html">第17章 Prompt 高级技术</a>
+            </div>
+            <div class="nav-section">第五阶段：工作流与多Agent</div>
+            <div class="nav-links">
+                <a href="ch18-agent-workflow.html">第18章 Agent 工作流</a>
+                <a href="ch19-multi-agent.html">第19章 多 Agent 编排</a>
+                <a href="ch20-mcp-protocol.html">第20章 MCP 协议</a>
+                <a href="ch21-agent-architecture.html">第21章 Agent 架构模式</a>
+            </div>
+            <div class="nav-section">第六阶段：生产化</div>
+            <div class="nav-links">
+                <a href="ch22-production.html">第22章 生产部署</a>
+                <a href="ch23-agent-deploy.html">第23章 Agent 部署</a>
+                <a href="ch24-ollama-vllm.html">第24章 本地模型部署</a>
+                <a href="ch25-data-pipeline.html">第25章 数据管道</a>
+                <a href="ch26-debugging-guide.html">第26章 调试排错</a>
+            </div>
+            <div class="nav-section">第七阶段：综合应用</div>
+            <div class="nav-links">
+                <a href="ch27-examples.html">第27章 实战案例</a>
+                <a href="ch28-cost-optimization.html">第28章 成本优化</a>
+                <a href="ch29-career-roadmap.html">第29章 职业路线</a>
+                <a href="ch30-frontier-trends.html">第30章 前沿趋势</a>
+            </div>
+            <a href="../springai-learning-map.html" class="nav-back">&#8592; 返回学习地图</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-badge">第 14 章</div>
+        <h1>AI 伦理与治理</h1>
+        <p class="hero-subtitle">理解 AI 伦理的核心原则，掌握主流合规框架要求，学会在 Agent 系统中实施安全防护与伦理治理策略</p>
+        <div class="hero-meta">
+            <span class="meta-item">预计 1-2 周</span>
+            <span class="meta-item">6 个知识点</span>
+            <span class="meta-item">中级难度</span>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- 开篇故事 -->
+        <section class="section" id="story">
+            <h2 class="section-title">&#128218; 开篇故事</h2>
+            <div class="card">
+                <p>想象你去一家医院看病。医生开药之前，一定会先问清你的过敏史、正在服用的药物，然后按照诊疗规范来开处方。这套"先确认、再执行、可追溯"的流程，不是为了限制医生的医术，而是为了<strong>保护患者的安全</strong>。</p>
+                <p style="margin-top: 12px;">AI 系统就像一位拥有"超能力"的医生 — 它可以在几秒钟内影响成千上万的人。如果没有伦理规范，这位"AI 医生"可能会因为训练数据中的偏见而歧视某些群体，因为缺乏透明度而做出无法解释的决策，因为没有问责机制而让错误无人承担。</p>
+                <p style="margin-top: 12px;">2024 年，某银行的 AI 信贷审批系统被曝出对女性申请人的拒贷率比同等条件的男性高出 23%。调查发现，训练数据中 10 年前的历史数据本身就带有性别偏见。这不是 AI "作恶"，而是 AI <strong>忠实地放大了</strong>人类社会已有的不公。</p>
+                <p style="margin-top: 12px;">AI 伦理与治理，就是给 AI 这位"超级医生"建立一套<strong>职业道德规范和监管制度</strong>。它确保 AI 在强大的同时，是公平的、透明的、可问责的。本章将带你从原则到实践，掌握构建负责任 AI 系统的完整知识体系。</p>
+            </div>
+        </section>
+
+        <!-- 学习目标 -->
+        <section class="section" id="objectives">
+            <h2 class="section-title">&#127919; 学习目标</h2>
+            <div class="card">
+                <p>在本章结束后，你将能够：</p>
+                <ul class="styled-list">
+                    <li><strong>理解伦理原则</strong> — 掌握公平性、透明性、可问责性、隐私保护等 AI 伦理核心原则</li>
+                    <li><strong>掌握偏见检测</strong> — 学会识别训练数据偏见、输出偏见，并应用缓解策略</li>
+                    <li><strong>熟悉合规框架</strong> — 了解 EU AI Act、中国《生成式 AI 管理办法》、GDPR 等主流法规要求</li>
+                    <li><strong>实施可解释性</strong> — 掌握决策轨迹可视化、审计日志设计等可解释 AI 技术</li>
+                    <li><strong>代码实战</strong> — 能用 Spring AI 实现内容审核 Advisor、偏见检测工具和审计日志</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 核心内容 1：AI 伦理基础 -->
+        <section class="section" id="content-1">
+            <h2 class="section-title">&#128196; 第一节：AI 伦理基础</h2>
+
+            <div class="card">
+                <h3>概念比喻：AI 的"职业道德守则"</h3>
+                <p>如果说 AI 是一位拥有超能力的员工，那么 AI 伦理就是它的<strong>职业道德守则</strong>。就像医生有希波克拉底誓言、律师有职业伦理规范一样，AI 系统也需要一套行为准则来确保它在追求效率的同时，不伤害人类的权益。</p>
+                <p style="margin-top: 8px;">AI 伦理的四大核心原则，就像交通规则中的"红灯停、绿灯行" — 简单却不可或缺：</p>
+            </div>
+
+            <div class="card">
+                <h3>公平性（Fairness）：确保 AI 不歧视</h3>
+                <p>公平性要求 AI 系统对所有群体一视同仁，不因性别、种族、年龄等因素产生差别对待。</p>
+
+                <div class="diagram">
+<pre>
+<span class="hl">公平性度量维度</span>
+
+  ┌─────────────────────────────────────────────┐
+  │              公平性度量框架                    │
+  ├─────────────┬───────────────┬───────────────┤
+  │  <span class="hl">群体公平</span>    │  <span class="hl">个体公平</span>      │  <span class="hl">反事实公平</span>    │
+  ├─────────────┼───────────────┼───────────────┤
+  │ 各群体获得   │ 相似个体获得   │ 改变受保护属性  │
+  │ 相同结果     │ 相似结果       │ 结果应不变     │
+  ├─────────────┼───────────────┼───────────────┤
+  │ 统计均等     │ 李普西茨连续性  │ 反事实检验     │
+  │ 机会均等     │               │               │
+  └─────────────┴───────────────┴───────────────┘
+</pre>
+                </div>
+
+                <h4>公平性的数学定义</h4>
+                <ul class="styled-list">
+                    <li><strong>统计均等（Statistical Parity）</strong>：P(预测=1|群体A) = P(预测=1|群体B)，即各群体获得正向预测的概率相同</li>
+                    <li><strong>机会均等（Equal Opportunity）</strong>：P(预测=1|实际=1, 群体A) = P(预测=1|实际=1, 群体B)，即在真正合格的个体中，各群体获得正向预测的概率相同</li>
+                    <li><strong>预测均等（Predictive Parity）</strong>：P(实际=1|预测=1, 群体A) = P(实际=1|预测=1, 群体B)，即在获得正向预测的个体中，各群体真正合格的概率相同</li>
+                </ul>
+
+                <div class="warn-box">
+                    <div class="label">&#9888;&#65039; 重要提醒</div>
+                    <p>上述三种公平性度量在数学上<strong>不可能同时满足</strong>（除非基础率相同或预测完全准确）。因此，公平性选择本质上是一个<strong>社会价值判断</strong>，需要根据具体业务场景来决定。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>透明性（Transparency）：让决策可理解</h3>
+                <p>透明性要求 AI 系统的决策过程可以被理解、被解释、被验证。就像法官判案必须写出判决理由一样，AI 给出结论时也需要说明"为什么"。</p>
+
+                <h4>透明性的三个层次</h4>
+                <ul class="styled-list">
+                    <li><strong>模型透明</strong>：公开模型的架构、训练数据来源、性能指标。开源模型天然具备这个优势</li>
+                    <li><strong>决策透明</strong>：对单个预测结果提供解释。例如："贷款被拒是因为：1) 收入低于中位数 2) 信用历史不足 3) 负债比偏高"</li>
+                    <li><strong>系统透明</strong>：公开 AI 系统的使用目的、影响范围、已知局限性和风险</li>
+                </ul>
+
+                <div class="code-block">
+<span class="cmt">// 透明性原则在 API 设计中的体现</span>
+<span class="kw">public record</span> <span class="cls">ExplainableResult</span>&lt;<span class="cls">T</span>&gt;(
+    <span class="cls">T</span> prediction,           <span class="cmt">// 预测结果</span>
+    <span class="cls">List</span>&lt;<span class="cls">Explanation</span>&gt; factors, <span class="cmt">// 决策因素及权重</span>
+    <span class="cls">double</span> confidence,       <span class="cmt">// 置信度</span>
+    <span class="cls">List</span>&lt;<span class="cls">String</span>&gt; warnings,  <span class="cmt">// 已知局限性</span>
+    <span class="cls">String</span> modelVersion,     <span class="cmt">// 使用的模型版本</span>
+    <span class="cls">Instant</span> timestamp        <span class="cmt">// 决策时间戳</span>
+) {}
+
+<span class="kw">public record</span> <span class="cls">Explanation</span>(
+    <span class="cls">String</span> factor,   <span class="cmt">// 影响因素名称</span>
+    <span class="cls">String</span> detail,   <span class="cmt">// 具体描述</span>
+    <span class="cls">double</span> weight,   <span class="cmt">// 权重（-1.0 到 1.0）</span>
+    <span class="cls">String</span> direction <span class="cmt">// "positive" 或 "negative"</span>
+) {}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>可问责性（Accountability）：明确责任归属</h3>
+                <p>可问责性要求 AI 系统的每一个决策都能追溯到具体的<strong>责任主体</strong>。出了问题，不能说"是 AI 自己做的"。</p>
+
+                <div class="diagram">
+<pre>
+<span class="hl">AI 可问责性链路</span>
+
+  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+  │ <span class="hl">数据提供者</span> │<span class="arr">──></span>│ <span class="hl">模型训练者</span> │<span class="arr">──></span>│ <span class="hl">系统部署者</span> │<span class="arr">──></span>│ <span class="hl">最终用户</span>   │
+  └──────────┘   └──────────┘   └──────────┘   └──────────┘
+       │              │              │              │
+       ▼              ▼              ▼              ▼
+  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+  │ 数据质量   │   │ 模型偏见  │   │ 系统滥用  │   │ 使用不当  │
+  │ 责任       │   │ 责任     │   │ 责任      │   │ 责任      │
+  └──────────┘   └──────────┘   └──────────┘   └──────────┘
+</pre>
+                </div>
+
+                <h4>可问责性的实施要素</h4>
+                <ul class="styled-list">
+                    <li><strong>审计日志</strong>：记录每一次 AI 决策的输入、输出、使用模型版本和时间戳</li>
+                    <li><strong>版本管理</strong>：每次模型更新都有版本号和变更说明，支持回滚</li>
+                    <li><strong>人机协作</strong>：高风险决策保留人工审核环节，AI 提供建议，人类做最终决定</li>
+                    <li><strong>投诉机制</strong>：建立用户反馈和申诉渠道，有明确的处理流程和时限</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>隐私保护（Privacy）：数据最小化原则</h3>
+                <p>隐私保护要求 AI 系统在数据收集、存储、使用各环节都遵循<strong>最小化原则</strong> — 只收集必要的数据，只使用授权的范围，只保留需要的时长。</p>
+
+                <h4>关键技术手段</h4>
+                <ul class="styled-list">
+                    <li><strong>数据脱敏</strong>：在训练前对敏感字段进行匿名化或假名化处理</li>
+                    <li><strong>差分隐私</strong>：在数据或模型中加入校准噪声，防止从输出反推个体信息</li>
+                    <li><strong>联邦学习</strong>：数据不出本地，只交换模型参数，从根本上避免数据集中</li>
+                    <li><strong>同态加密</strong>：在加密数据上直接计算，无需解密</li>
+                </ul>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; 实践建议</div>
+                    <p>在 Agent 系统中，每次工具调用都可能涉及数据外传。务必在 Agent 的系统提示中明确数据处理边界，并在工具层面实现数据过滤和脱敏。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心内容 2：偏见检测与缓解 -->
+        <section class="section" id="content-2">
+            <h2 class="section-title">&#128196; 第二节：偏见检测与缓解</h2>
+
+            <div class="card">
+                <h3>偏见的来源：AI 如何"继承"人类偏见</h3>
+                <p>偏见不是 AI 自己产生的，而是从三个环节"学"来的：</p>
+
+                <div class="diagram">
+<pre>
+<span class="hl">AI 偏见传播链</span>
+
+  ┌──────────────┐
+  │ <span class="hl">社会历史偏见</span>  │  历史数据本身就带有歧视性
+  └──────┬───────┘
+         <span class="arr">v</span>
+  ┌──────────────┐
+  │ <span class="hl">训练数据偏见</span>  │  数据采集不均衡、标注偏差
+  └──────┬───────┘
+         <span class="arr">v</span>
+  ┌──────────────┐
+  │ <span class="hl">模型学习偏见</span>  │  特征选择不当、过拟合特定模式
+  └──────┬───────┘
+         <span class="arr">v</span>
+  ┌──────────────┐
+  │ <span class="hl">输出放大偏见</span>  │  线上部署后反馈循环加剧
+  └──────────────┘
+</pre>
+                </div>
+
+                <h4>典型偏见类型</h4>
+                <ul class="styled-list">
+                    <li><strong>采样偏见（Sampling Bias）</strong>：训练数据不能代表目标人群。例如，语音识别系统主要用英语母语者数据训练，对非母语口音识别率显著下降</li>
+                    <li><strong>标签偏见（Labeling Bias）</strong>：人工标注时引入标注者的主观偏见。例如，"有攻击性的"内容标注标准因文化而异</li>
+                    <li><strong>特征偏见（Feature Bias）</strong>：使用与受保护属性高度相关的代理特征。例如，邮政编码可以间接反映种族分布</li>
+                    <li><strong>确认偏见（Confirmation Bias）</strong>：模型倾向于"验证"训练数据中已存在的模式</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>偏见检测方法</h3>
+                <p>检测偏见就像给 AI 做"体检"，需要从数据和输出两个维度进行系统性检查。</p>
+
+                <h4>训练数据偏见检测</h4>
+                <div class="code-block">
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">BiasDetector</span> {
+
+    <span class="cmt">/**
+     * 检查训练数据中的群体分布均衡性
+     * 统计均等差异度 = |P(Y=1|A=0) - P(Y=1|A=1)|
+     * 差异度 > 0.1 即认为存在显著偏见
+     */</span>
+    <span class="kw">public</span> <span class="cls">BiasReport</span> <span class="fn">checkGroupBalance</span>(
+            <span class="cls">List</span>&lt;<span class="cls">TrainingSample</span>&gt; data,
+            <span class="cls">String</span> protectedAttribute,
+            <span class="cls">String</span> targetAttribute) {
+
+        <span class="cmt">// 按受保护属性分组</span>
+        <span class="kw">var</span> groups = data.stream()
+            .collect(<span class="cls">Collectors</span>.groupingBy(
+                s -&gt; s.features().get(protectedAttribute)));
+
+        <span class="kw">var</span> rates = <span class="kw">new</span> <span class="cls">HashMap</span>&lt;<span class="cls">String</span>, <span class="cls">Double</span>&gt;();
+
+        <span class="kw">for</span> (<span class="kw">var</span> entry : groups.entrySet()) {
+            <span class="kw">long</span> positiveCount = entry.getValue().stream()
+                .filter(s -&gt; <span class="str">"1"</span>.equals(
+                    s.labels().get(targetAttribute)))
+                .count();
+            <span class="kw">double</span> rate = (<span class="kw">double</span>) positiveCount
+                / entry.getValue().size();
+            rates.put(entry.getKey(), rate);
+        }
+
+        <span class="cmt">// 计算最大差异度</span>
+        <span class="kw">double</span> maxDiff = rates.values().stream()
+            .mapToDouble(r1 -&gt; rates.values().stream()
+                .mapToDouble(r2 -&gt; Math.abs(r1 - r2))
+                .max().orElse(0.0))
+            .max().orElse(0.0);
+
+        <span class="kw">return new</span> <span class="cls">BiasReport</span>(
+            protectedAttribute,
+            rates,
+            maxDiff,
+            maxDiff &gt; <span class="kw">0.1</span> ? <span class="cls">Severity</span>.HIGH
+                : maxDiff &gt; <span class="kw">0.05</span> ? <span class="cls">Severity</span>.MEDIUM
+                : <span class="cls">Severity</span>.LOW
+        );
+    }
+}
+</div>
+
+                <h4>输出偏见检测</h4>
+                <div class="code-block">
+<span class="cmt">/**
+ * 检测模型输出是否对不同群体存在差异化对待
+ * 方法：构造仅受保护属性不同的对照样本，比较输出差异
+ */</span>
+<span class="kw">public</span> <span class="cls">OutputBiasReport</span> <span class="fn">checkOutputBias</span>(
+        <span class="cls">ChatClient</span> chatClient,
+        <span class="cls">List</span>&lt;<span class="cls">Pair</span>&lt;<span class="cls">String</span>, <span class="cls">String</span>&gt;&gt; controlPairs) {
+
+    <span class="kw">var</span> divergences = <span class="kw">new</span> <span class="cls">ArrayList</span>&lt;<span class="cls">Double</span>&gt;();
+
+    <span class="kw">for</span> (<span class="kw">var</span> pair : controlPairs) {
+        <span class="cls">String</span> outputA = chatClient.prompt()
+            .user(pair.getLeft()).call().content();
+        <span class="cls">String</span> outputB = chatClient.prompt()
+            .user(pair.getRight()).call().content();
+
+        <span class="cmt">// 用嵌入向量计算输出相似度</span>
+        <span class="kw">double</span> similarity = <span class="fn">computeSimilarity</span>(
+            outputA, outputB);
+        divergences.add(<span class="kw">1.0</span> - similarity);
+    }
+
+    <span class="kw">double</span> avgDivergence = divergences.stream()
+        .mapToDouble(d -&gt; d).average().orElse(0.0);
+
+    <span class="kw">return new</span> <span class="cls">OutputBiasReport</span>(
+        controlPairs.size(),
+        avgDivergence,
+        avgDivergence &gt; <span class="kw">0.3</span>
+    );
+}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>偏见缓解策略</h3>
+                <p>偏见缓解就像给 AI "矫正视力"，根据干预时机分为三个阶段：</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>&#9312; 预处理（Pre-processing）</h4>
+                        <p>在训练数据上做文章：</p>
+                        <ul class="styled-list">
+                            <li><strong>重采样</strong>：过采样少数群体或欠采样多数群体，使分布均衡</li>
+                            <li><strong>重标签</strong>：用更公平的标注标准重新标记数据</li>
+                            <li><strong>特征变换</strong>：使用对抗学习去除受保护属性的信息</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>&#9313; 处理中（In-processing）</h4>
+                        <p>在训练过程中干预：</p>
+                        <ul class="styled-list">
+                            <li><strong>约束优化</strong>：在损失函数中加入公平性约束项</li>
+                            <li><strong>对抗训练</strong>：训练一个"公平性判别器"来消除偏见</li>
+                            <li><strong>正则化</strong>：对偏见方向的梯度进行惩罚</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>&#9314; 后处理（Post-processing）</h4>
+                    <p>在模型输出阶段修正：</p>
+                    <ul class="styled-list">
+                        <li><strong>阈值调整</strong>：为不同群体设置不同的决策阈值，以达到机会均等</li>
+                        <li><strong>输出校准</strong>：根据公平性度量对预测概率进行后校准</li>
+                        <li><strong>拒绝选项</strong>：对于置信度低的边缘案例，转为人工审核</li>
+                    </ul>
+                </div>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; 选择策略</div>
+                    <p>预处理成本最低、侵入性最小，适合大多数场景。处理中效果最好但需要访问模型内部，通常只有模型训练者才能使用。后处理适用于已部署的黑盒模型。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心内容 3：合规框架 -->
+        <section class="section" id="content-3">
+            <h2 class="section-title">&#128196; 第三节：合规框架</h2>
+
+            <div class="card">
+                <h3>概念比喻：AI 的"交通法规"</h3>
+                <p>如果说伦理原则是"开车要有道德"，那么合规框架就是<strong>写在法律里的交通规则</strong> — 红灯停、限速 120、必须系安全带。各国政府正在为 AI 制定类似的"交通法规"，违反者将面临罚款甚至刑事责任。</p>
+            </div>
+
+            <div class="card">
+                <h3>中国《生成式人工智能服务管理暂行办法》</h3>
+                <p>2023 年 8 月 15 日正式实施，是中国 AI 领域最重要的专项法规。</p>
+
+                <table>
+                    <thead>
+                        <tr><th>要求</th><th>具体内容</th><th>对 Agent 开发的影响</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>内容安全</strong></td>
+                            <td>生成内容不得含有颠覆国家政权、恐怖主义、歧视等内容</td>
+                            <td>必须实现输入/输出内容审核机制</td>
+                        </tr>
+                        <tr>
+                            <td><strong>数据合规</strong></td>
+                            <td>训练数据不得侵犯知识产权，个人信息处理需遵守《个保法》</td>
+                            <td>数据来源必须合法合规，需建立数据溯源机制</td>
+                        </tr>
+                        <tr>
+                            <td><strong>用户协议</strong></td>
+                            <td>明确服务协议和使用规范，告知用户 AI 生成属性</td>
+                            <td>输出内容需标注"AI 生成"，用户协议需包含风险提示</td>
+                        </tr>
+                        <tr>
+                            <td><strong>投诉处理</strong></td>
+                            <td>建立投诉举报机制，及时处理违规内容</td>
+                            <td>需实现内容举报和快速响应流程</td>
+                        </tr>
+                        <tr>
+                            <td><strong>安全评估</strong></td>
+                            <td>按规定进行安全评估和算法备案</td>
+                            <td>上架前需通过安全评估，按要求备案算法</td>
+                        </tr>
+                        <tr>
+                            <td><strong>标识义务</strong></td>
+                            <td>对生成的图片、视频等内容进行标识</td>
+                            <td>需在元数据中嵌入 AI 生成标识</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>EU AI Act：全球最严 AI 法案</h3>
+                <p>2024 年 8 月正式生效的欧盟《人工智能法案》，是全球首个对 AI 进行系统性监管的法律。它采用<strong>基于风险的分级管理</strong>：</p>
+
+                <div class="diagram">
+<pre>
+<span class="hl">EU AI Act 风险分级体系</span>
+
+  ┌─────────────────────────────────────────────┐
+  │        <span class="hl">不可接受风险</span>（禁止）                  │
+  │  社会信用评分、实时远程生物识别（执法除外）     │
+  ├─────────────────────────────────────────────┤
+  │        <span class="hl">高风险</span>（严格监管）                     │
+  │  信用评估、招聘筛选、司法辅助、医疗诊断        │
+  │  要求：风险评估 + 数据治理 + 人类监督 + 日志  │
+  ├─────────────────────────────────────────────┤
+  │        <span class="hl">有限风险</span>（透明度义务）                 │
+  │  聊天机器人、情感识别系统                      │
+  │  要求：告知用户正在与 AI 交互                  │
+  ├─────────────────────────────────────────────┤
+  │        <span class="hl">最小风险</span>（自由使用）                   │
+  │  垃圾邮件过滤、AI 游戏、推荐系统               │
+  └─────────────────────────────────────────────┘
+</pre>
+                </div>
+
+                <h4>对 Agent 系统的关键要求</h4>
+                <ul class="styled-list">
+                    <li><strong>高风险 Agent</strong>：必须进行 Conformity Assessment（合格评估），建立质量管理体系</li>
+                    <li><strong>通用 AI（GPAI）</strong>：基础模型提供商需披露训练数据摘要、进行红队测试</li>
+                    <li><strong>透明度</strong>：用户必须知道他们正在与 AI 交互，AI 生成内容必须可识别</li>
+                    <li><strong>人工监督</strong>：高风险 AI 系统必须有人工干预和否决机制</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>GDPR 对 AI 的要求</h3>
+                <p>欧盟《通用数据保护条例》虽然不是 AI 专项法律，但对 AI 系统有深远影响：</p>
+
+                <ul class="styled-list">
+                    <li><strong>第 22 条 — 自动化决策</strong>：数据主体有权不受仅基于自动化处理的决策约束，有权获得人工干预、表达观点和质疑决定</li>
+                    <li><strong>第 13-14 条 — 信息权</strong>：必须告知用户自动化决策的存在、逻辑、意义和预期后果</li>
+                    <li><strong>第 15 条 — 访问权</strong>：用户有权获得关于其个人数据如何用于自动化决策的信息</li>
+                    <li><strong>第 25 条 — 隐私设计</strong>：AI 系统必须在设计阶段就考虑数据保护</li>
+                </ul>
+
+                <div class="info-box">
+                    <div class="label">&#128218; 实践要点</div>
+                    <p>即使你的服务不在欧盟，只要处理欧盟居民的数据，就必须遵守 GDPR。对于全球化 Agent 产品，建议默认按 GDPR 标准设计。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>内容安全审核机制</h3>
+                <p>在中国运营 AI 服务，内容安全是第一道红线。审核机制通常分为三层：</p>
+
+                <div class="diagram">
+<pre>
+<span class="hl">内容安全审核三层架构</span>
+
+  ┌──────────┐   ┌──────────┐   ┌──────────┐
+  │ <span class="hl">输入审核</span>  │   │ <span class="hl">生成控制</span>  │   │ <span class="hl">输出审核</span>  │
+  ├──────────┤   ├──────────┤   ├──────────┤
+  │ 关键词过滤│   │ 系统提示  │   │ 内容分类器│
+  │ 意图分类  │   │ 约束边界  │   │ 敏感信息  │
+  │ 垃圾检测  │   │ 温度控制  │   │ 检测脱敏  │
+  └────┬─────┘   └────┬─────┘   └────┬─────┘
+       │              │              │
+       ▼              ▼              ▼
+  ┌──────────────────────────────────────────┐
+  │              <span class="hl">安全决策引擎</span>                  │
+  │  通过 → 正常响应                           │
+  │  告警 → 人工审核 + 替代响应                 │
+  │  拒绝 → 告知用户 + 记录日志                 │
+  └──────────────────────────────────────────┘
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心内容 4：可解释性 -->
+        <section class="section" id="content-4">
+            <h2 class="section-title">&#128196; 第四节：可解释性（XAI）</h2>
+
+            <div class="card">
+                <h3>概念比喻：AI 的"透明窗口"</h3>
+                <p>想象你走进一家餐厅的开放式厨房 — 你能看到厨师的每一个操作步骤，食材从哪里来、怎么处理、放了什么调料。可解释性就是给 AI 系统装上这样一个<strong>透明窗口</strong>，让用户和监管者都能看清决策的全过程。</p>
+            </div>
+
+            <div class="card">
+                <h3>决策轨迹可视化</h3>
+                <p>对于 Agent 系统，可解释性不仅包括模型本身的可解释性，还包括<strong>推理链路的可追溯性</strong> — Agent 为什么选择这个工具？中间推理了哪些步骤？</p>
+
+                <div class="diagram">
+<pre>
+<span class="hl">Agent 决策轨迹可视化</span>
+
+  用户输入: "北京明天天气怎么样？"
+    │
+    ├─ <span class="hl">意图识别</span>: WeatherQuery (confidence: 0.95)
+    │     └─ 提取参数: {city: "北京", date: "明天"}
+    │
+    ├─ <span class="hl">工具选择</span>: WeatherAPI (reason: "需要实时天气数据")
+    │     └─ 候选工具: WeatherAPI(0.93), SearchAPI(0.45), Calculator(0.02)
+    │
+    ├─ <span class="hl">工具调用</span>: GET /api/weather?city=beijing&amp;date=tomorrow
+    │     └─ 响应: {temp: "28°C", condition: "晴", wind: "3级"}
+    │
+    ├─ <span class="hl">结果生成</span>: "北京明天天气晴朗，气温28°C，微风3级"
+    │     └─ 置信度: 0.92 (基于数据完整性和工具可靠性)
+    │
+    └─ <span class="hl">输出标注</span>: [数据来源: WeatherAPI, 时间: 2024-03-15T18:00:00]
+</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>置信度表达机制</h3>
+                <p>AI 系统应该诚实地告诉用户"我有多确定"，而不是对所有问题都给出一样自信的回答。</p>
+
+                <div class="code-block">
+<span class="cmt">// 置信度分级与用户展示映射</span>
+<span class="kw">public enum</span> <span class="cls">ConfidenceLevel</span> {
+
+    <span class="ann">@ConfidenceRange</span>(min = 0.9, max = 1.0)
+    HIGH(<span class="str">"确定"</span>, <span class="str">"基于可靠数据源，结果高度可信"</span>),
+
+    <span class="ann">@ConfidenceRange</span>(min = 0.7, max = 0.9)
+    MEDIUM(<span class="str">"较大可能"</span>, <span class="str">"基于可用信息，建议进一步验证"</span>),
+
+    <span class="ann">@ConfidenceRange</span>(min = 0.5, max = 0.7)
+    LOW(<span class="str">"仅供参考"</span>, <span class="str">"信息有限，建议人工核实"</span>),
+
+    <span class="ann">@ConfidenceRange</span>(min = 0.0, max = 0.5)
+    UNRELIABLE(<span class="str">"无法确定"</span>, <span class="str">"缺乏足够信息，建议咨询专业人士"</span>);
+
+    <span class="kw">private final</span> <span class="cls">String</span> label;
+    <span class="kw">private final</span> <span class="cls">String</span> disclaimer;
+
+    <span class="cmt">// 嵌入输出中的置信度标注</span>
+    <span class="kw">public</span> <span class="cls">String</span> <span class="fn">annotate</span>(<span class="cls">String</span> response) {
+        <span class="kw">return</span> response + <span class="str">"\n\n---\n["</span> + label + <span class="str">"] "</span> + disclaimer;
+    }
+}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>审计日志设计</h3>
+                <p>审计日志是 AI 可问责性的技术基石。每一条日志都是一份"证据"，记录了 AI 系统在何时、何地、对谁、做了什么决策。</p>
+
+                <div class="code-block">
+<span class="cmt">// Agent 审计日志数据模型</span>
+<span class="kw">public record</span> <span class="cls">AuditLogEntry</span>(
+    <span class="cls">String</span> traceId,          <span class="cmt">// 请求追踪ID</span>
+    <span class="cls">String</span> sessionId,       <span class="cmt">// 会话ID</span>
+    <span class="cls">Instant</span> timestamp,       <span class="cmt">// 时间戳</span>
+    <span class="cls">String</span> userId,          <span class="cmt">// 用户标识（脱敏后）</span>
+    <span class="cls">String</span> action,          <span class="cmt">// 操作类型</span>
+    <span class="cls">String</span> input,           <span class="cmt">// 输入内容</span>
+    <span class="cls">String</span> output,          <span class="cmt">// 输出内容</span>
+    <span class="cls">String</span> modelId,         <span class="cmt">// 模型版本</span>
+    <span class="cls">double</span> confidence,      <span class="cmt">// 置信度</span>
+    <span class="cls">List</span>&lt;<span class="cls">String</span>&gt; toolsUsed, <span class="cmt">// 调用的工具列表</span>
+    <span class="cls">List</span>&lt;<span class="cls">SafetyCheck</span>&gt; safetyChecks, <span class="cmt">// 安全检查结果</span>
+    <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; metadata  <span class="cmt">// 扩展元数据</span>
+) {}
+
+<span class="cmt">// 安全检查记录</span>
+<span class="kw">public record</span> <span class="cls">SafetyCheck</span>(
+    <span class="cls">String</span> checkType,   <span class="cmt">// 检查类型</span>
+    <span class="kw">boolean</span> passed,      <span class="cmt">// 是否通过</span>
+    <span class="cls">String</span> detail,      <span class="cmt">// 详情</span>
+    <span class="cls">Instant</span> checkedAt   <span class="cmt">// 检查时间</span>
+) {}
+</div>
+
+                <div class="tip-box">
+                    <div class="label">&#128161; 审计日志设计原则</div>
+                    <p>1) <strong>不可篡改</strong>：日志写入后不应被修改或删除，建议使用追加写入模式。2) <strong>最小化</strong>：只记录必要信息，敏感数据需脱敏。3) <strong>可检索</strong>：按 traceId、userId、时间范围等维度可快速查询。4) <strong>合规留存</strong>：根据当地法律要求确定保留时长（通常 6 个月至 3 年）。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 实战示例 -->
+        <section class="section" id="practice">
+            <h2 class="section-title">&#128187; 实战示例：Spring AI 伦理治理组件</h2>
+
+            <div class="card">
+                <h3>1. 内容审核 Advisor</h3>
+                <p>基于 Spring AI Advisor 模式实现的内容审核拦截器，在每次 LLM 调用前后自动进行安全检查。</p>
+
+                <div class="code-block">
+<span class="cmt">// ===== 内容审核 Advisor =====</span>
+<span class="ann">@Component</span>
+<span class="kw">public class</span> <span class="cls">ContentModerationAdvisor</span> <span class="kw">implements</span> <span class="cls">CallAdvisor</span> {
+
+    <span class="kw">private final</span> <span class="cls">ChatClient</span> safetyClassifier;
+    <span class="kw">private final</span> <span class="cls">AuditLogger</span> auditLogger;
+
+    <span class="kw">private static final</span> <span class="cls">Set</span>&lt;<span class="cls">String</span>&gt; BLOCKED_CATEGORIES = <span class="cls">Set</span>.of(
+        <span class="str">"violence"</span>, <span class="str">"hate_speech"</span>, <span class="str">"illegal_activity"</span>,
+        <span class="str">"personal_attack"</span>, <span class="str">"political_sensitivity"</span>
+    );
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> <span class="cls">String</span> <span class="fn">getName</span>() {
+        <span class="kw">return</span> <span class="str">"ContentModerationAdvisor"</span>;
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public</span> <span class="cls">AdvisResponse</span> <span class="fn">aroundCall</span>(
+            <span class="cls">CallAdvisorChain</span> chain,
+            <span class="cls">ChatClientRequest</span> request,
+            <span class="cls">CallOptions</span> options) {
+
+        <span class="cls">String</span> userInput = <span class="fn">extractUserMessage</span>(request);
+
+        <span class="cmt">// 1. 输入内容审核</span>
+        <span class="cls">ModerationResult</span> inputCheck =
+            <span class="fn">moderateContent</span>(userInput, <span class="str">"input"</span>);
+
+        <span class="kw">if</span> (inputCheck.blocked()) {
+            auditLogger.logSafetyEvent(
+                <span class="fn">extractTraceId</span>(request),
+                <span class="str">"INPUT_BLOCKED"</span>,
+                inputCheck.category(),
+                userInput
+            );
+            <span class="kw">return new</span> <span class="cls">AdvisResponse</span>(
+                <span class="fn">buildBlockedResponse</span>(inputCheck.category()),
+                request
+            );
+        }
+
+        <span class="cmt">// 2. 调用下游（正常流程）</span>
+        <span class="cls">AdvisResponse</span> response = chain.nextCall(request, options);
+
+        <span class="cmt">// 3. 输出内容审核</span>
+        <span class="cls">String</span> assistantOutput =
+            <span class="fn">extractAssistantContent</span>(response);
+        <span class="cls">ModerationResult</span> outputCheck =
+            <span class="fn">moderateContent</span>(assistantOutput, <span class="str">"output"</span>);
+
+        <span class="kw">if</span> (outputCheck.blocked()) {
+            auditLogger.logSafetyEvent(
+                <span class="fn">extractTraceId</span>(request),
+                <span class="str">"OUTPUT_BLOCKED"</span>,
+                outputCheck.category(),
+                assistantOutput
+            );
+            <span class="kw">return new</span> <span class="cls">AdvisResponse</span>(
+                <span class="fn">buildBlockedResponse</span>(outputCheck.category()),
+                request
+            );
+        }
+
+        <span class="cmt">// 4. 记录审核通过的审计日志</span>
+        auditLogger.logNormalRequest(
+            <span class="fn">extractTraceId</span>(request),
+            userInput, assistantOutput
+        );
+
+        <span class="kw">return</span> response;
+    }
+
+    <span class="kw">private</span> <span class="cls">ModerationResult</span> <span class="fn">moderateContent</span>(
+            <span class="cls">String</span> text, <span class="cls">String</span> phase) {
+
+        <span class="cls">String</span> result = safetyClassifier.prompt()
+            .system(<span class="str">"""
+                你是一个内容安全分类器。判断文本是否包含
+                以下违规类别：violence, hate_speech,
+                illegal_activity, personal_attack,
+                political_sensitivity, safe。
+
+                只返回 JSON 格式：
+                {"category": "类别", "safe": true/false,
+                 "confidence": 0.0-1.0}
+                """</span>)
+            .user(text)
+            .call()
+            .content();
+
+        <span class="kw">return</span> <span class="fn">parseModerationResult</span>(result);
+    }
+}
+
+<span class="kw">public record</span> <span class="cls">ModerationResult</span>(
+    <span class="cls">String</span> category,
+    <span class="kw">boolean</span> safe,
+    <span class="kw">boolean</span> blocked,
+    <span class="kw">double</span> confidence
+) {}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>2. 审计日志记录器</h3>
+
+                <div class="code-block">
+<span class="cmt">// ===== 审计日志服务 =====</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">AuditLogger</span> {
+
+    <span class="kw">private final</span> <span class="cls">AuditLogRepository</span> repository;
+    <span class="kw">private final</span> <span class="cls">ObjectMapper</span> objectMapper;
+
+    <span class="kw">public void</span> <span class="fn">logNormalRequest</span>(
+            <span class="cls">String</span> traceId,
+            <span class="cls">String</span> input,
+            <span class="cls">String</span> output) {
+
+        <span class="kw">var</span> entry = <span class="kw">new</span> <span class="cls">AuditLogEntry</span>(
+            traceId,
+            <span class="fn">getCurrentSessionId</span>(),
+            <span class="cls">Instant</span>.now(),
+            <span class="fn">anonymizeUserId</span>(<span class="fn">getCurrentUserId</span>()),
+            <span class="str">"CHAT_COMPLETION"</span>,
+            <span class="fn">anonymizePII</span>(input),
+            <span class="fn">anonymizePII</span>(output),
+            <span class="fn">getCurrentModelVersion</span>(),
+            <span class="fn">calculateConfidence</span>(output),
+            <span class="fn">getToolsUsed</span>(),
+            <span class="cls">List</span>.of(),
+            <span class="cls">Map</span>.of(<span class="str">"phase"</span>, <span class="str">"normal"</span>)
+        );
+
+        repository.save(entry);
+    }
+
+    <span class="kw">public void</span> <span class="fn">logSafetyEvent</span>(
+            <span class="cls">String</span> traceId,
+            <span class="cls">String</span> eventType,
+            <span class="cls">String</span> category,
+            <span class="cls">String</span> content) {
+
+        <span class="kw">var</span> entry = <span class="kw">new</span> <span class="cls">AuditLogEntry</span>(
+            traceId,
+            <span class="fn">getCurrentSessionId</span>(),
+            <span class="cls">Instant</span>.now(),
+            <span class="fn">anonymizeUserId</span>(<span class="fn">getCurrentUserId</span>()),
+            eventType,
+            <span class="fn">anonymizePII</span>(content),
+            <span class="kw">null</span>,  <span class="cmt">// 被拦截的请求没有输出</span>
+            <span class="fn">getCurrentModelVersion</span>(),
+            <span class="kw">0.0</span>,
+            <span class="cls">List</span>.of(),
+            <span class="cls">List</span>.of(<span class="kw">new</span> <span class="cls">SafetyCheck</span>(
+                category, <span class="kw">false</span>,
+                <span class="str">"Blocked by "</span> + eventType,
+                <span class="cls">Instant</span>.now()
+            )),
+            <span class="cls">Map</span>.of(<span class="str">"phase"</span>, <span class="str">"safety"</span>)
+        );
+
+        repository.save(entry);
+    }
+
+    <span class="cmt">// PII 脱敏处理</span>
+    <span class="kw">private</span> <span class="cls">String</span> <span class="fn">anonymizePII</span>(<span class="cls">String</span> text) {
+        <span class="kw">if</span> (text == <span class="kw">null</span>) <span class="kw">return null</span>;
+        <span class="cmt">// 手机号脱敏</span>
+        text = text.replaceAll(
+            <span class="str">"(1[3-9]\\d)\\d{4}(\\d{4})"</span>,
+            <span class="str">"$1****$2"</span>
+        );
+        <span class="cmt">// 身份证脱敏</span>
+        text = text.replaceAll(
+            <span class="str">"(\\d{6})\\d{8}(\\d{4})"</span>,
+            <span class="str">"$1********$2"</span>
+        );
+        <span class="cmt">// 邮箱脱敏</span>
+        text = text.replaceAll(
+            <span class="str">"(\\w{2})\\w+@(\\w+\\.\\w+)"</span>,
+            <span class="str">"$1***@$2"</span>
+        );
+        <span class="kw">return</span> text;
+    }
+}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>3. 偏见检测工具</h3>
+
+                <div class="code-block">
+<span class="cmt">// ===== Agent 偏见检测工具 =====</span>
+<span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">BiasDetectionTool</span> {
+
+    <span class="cmt">/**
+     * 注册为 Spring AI Tool，Agent 可以主动调用
+     * 在生成关键内容前自动检测潜在偏见
+     */</span>
+    <span class="ann">@Tool(description = "检测文本内容是否存在偏见，" +
+          "返回偏见类型、严重程度和建议")</span>
+    <span class="kw">public</span> <span class="cls">BiasCheckResult</span> <span class="fn">detectBias</span>(
+            <span class="ann">@ToolParam</span>(description = <span class="str">"待检测的文本"</span>)
+            <span class="cls">String</span> text,
+            <span class="ann">@ToolParam</span>(description = <span class="str">"上下文场景描述"</span>)
+            <span class="cls">String</span> context) {
+
+        <span class="cmt">// 基于规则的快速检测</span>
+        <span class="cls">List</span>&lt;<span class="cls">BiasIndicator</span>&gt; indicators = <span class="fn">ruleBasedCheck</span>(text);
+
+        <span class="cmt">// 基于 LLM 的深度分析</span>
+        <span class="cls">String</span> analysis = biasAnalyzer.prompt()
+            .system(<span class="str">"""
+                分析以下文本是否存在偏见。考虑：
+                1. 性别/种族/年龄/地域等维度的刻板印象
+                2. 语言中的隐含假设
+                3. 信息呈现的选择性偏差
+                返回 JSON 格式的分析结果。
+                """</span>)
+            .user(<span class="str">"上下文: "</span> + context + <span class="str">"\n文本: "</span> + text)
+            .call()
+            .content();
+
+        <span class="kw">return</span> <span class="fn">buildBiasCheckResult</span>(indicators, analysis);
+    }
+
+    <span class="kw">private</span> <span class="cls">List</span>&lt;<span class="cls">BiasIndicator</span>&gt; <span class="fn">ruleBasedCheck</span>(<span class="cls">String</span> text) {
+        <span class="kw">var</span> indicators = <span class="kw">new</span> <span class="cls">ArrayList</span>&lt;<span class="cls">BiasIndicator</span>&gt;();
+
+        <span class="cmt">// 性别刻板印象检测</span>
+        <span class="kw">if</span> (<span class="fn">containsGenderStereotype</span>(text)) {
+            indicators.add(<span class="kw">new</span> <span class="cls">BiasIndicator</span>(
+                <span class="cls">BiasType</span>.GENDER_STEREOTYPE,
+                <span class="cls">Severity</span>.MEDIUM,
+                <span class="str">"检测到可能的性别刻板印象表述"</span>
+            ));
+        }
+
+        <span class="cmt">// 年龄偏见检测</span>
+        <span class="kw">if</span> (<span class="fn">containsAgeBias</span>(text)) {
+            indicators.add(<span class="kw">new</span> <span class="cls">BiasIndicator</span>(
+                <span class="cls">BiasType</span>.AGE_BIAS,
+                <span class="cls">Severity</span>.LOW,
+                <span class="str">"检测到可能的年龄相关偏见"</span>
+            ));
+        }
+
+        <span class="kw">return</span> indicators;
+    }
+}
+
+<span class="kw">public record</span> <span class="cls">BiasCheckResult</span>(
+    <span class="cls">List</span>&lt;<span class="cls">BiasIndicator</span>&gt; indicators,
+    <span class="cls">String</span> llmAnalysis,
+    <span class="kw">boolean</span> hasBias,
+    <span class="cls">Severity</span> overallSeverity,
+    <span class="cls">String</span> suggestion
+) {}
+</div>
+            </div>
+
+            <div class="card">
+                <h3>4. 将 Advisor 注册到 ChatClient</h3>
+
+                <div class="code-block">
+<span class="cmt">// ===== 配置类：为 Agent 注入伦理治理能力 =====</span>
+<span class="ann">@Configuration</span>
+<span class="kw">public class</span> <span class="cls">EthicalAgentConfig</span> {
+
+    <span class="ann">@Bean</span>
+    <span class="kw">public</span> <span class="cls">ChatClient</span> <span class="fn">ethicalChatClient</span>(
+            <span class="cls">ChatClient</span>.<span class="cls">Builder</span> builder,
+            <span class="cls">ContentModerationAdvisor</span> moderationAdvisor,
+            <span class="cls">AuditLoggingAdvisor</span> auditAdvisor) {
+
+        <span class="kw">return</span> builder
+            .defaultAdvisors(
+                <span class="cmt">// 安全检查在最外层</span>
+                auditAdvisor,
+                moderationAdvisor
+            )
+            .defaultTools(<span class="kw">new</span> <span class="cls">BiasDetectionTool</span>())
+            .defaultSystem(<span class="str">"""
+                你是一个负责任的 AI 助手。
+                请遵循以下原则：
+                1. 对所有用户群体保持公平和尊重
+                2. 当你不确定时，明确表示不确定
+                3. 不对受保护属性（性别、种族、年龄等）
+                   做出假设性判断
+                4. 涉及专业领域（医疗、法律、金融）时，
+                   建议用户咨询专业人士
+                """</span>)
+            .build();
+    }
+}
+</div>
+
+                <div class="info-box">
+                    <div class="label">&#128218; 代码运行效果</div>
+                    <p>当用户通过 ethicalChatClient 发送请求时，会自动经过：审计日志记录 → 内容安全审核 → 模型生成 → 输出安全审核 → 偏见检测工具可选调用。整个过程对用户透明，但每一步都被记录和监控。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 章节小结 -->
+        <section class="section" id="summary">
+            <h2 class="section-title">&#128214; 章节小结</h2>
+            <div class="card">
+                <ul class="styled-list">
+                    <li><strong>公平性、透明性、可问责性、隐私保护</strong> — 这四大原则是 AI 伦理的基石。公平性确保不歧视，透明性让决策可理解，可问责性明确责任归属，隐私保护遵循数据最小化</li>
+                    <li><strong>偏见源于数据和模型</strong> — 训练数据的采样偏差、标签偏差、特征偏差都会导致模型输出偏见。缓解策略分为预处理、处理中和后处理三个阶段</li>
+                    <li><strong>合规是底线</strong> — 中国《生成式 AI 管理办法》要求内容安全审核、数据合规和算法备案；EU AI Act 按风险分级进行监管；GDPR 要求自动化决策可解释和可干预</li>
+                    <li><strong>可解释性是信任的基础</strong> — 通过决策轨迹可视化、置信度表达和审计日志设计，让用户和监管者都能理解 AI 的决策过程</li>
+                    <li><strong>Spring AI 提供了落地工具</strong> — Advisor 模式天然适合实现内容审核和审计日志，Tool 机制可以注册偏见检测等伦理工具</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 面试高频 -->
+        <section class="section" id="interview">
+            <h2 class="section-title">&#127891; 面试高频题</h2>
+
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q1: 什么是 AI 中的公平性？如何在技术上度量和实现？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>答：</strong>公平性确保 AI 系统不对不同群体产生歧视性输出。技术上常用三种度量：<strong>统计均等</strong>（各群体获得正向预测的概率相同）、<strong>机会均等</strong>（真正合格的个体中各群体获得正向预测的概率相同）、<strong>预测均等</strong>（获得正向预测的个体中各群体真正合格的概率相同）。注意这三者在数学上不可同时满足。实现上分为预处理（数据重采样）、处理中（约束优化、对抗训练）和后处理（阈值校准）。实际选择取决于业务场景的风险容忍度和合规要求。
+                </p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q2: EU AI Act 如何对 AI 系统进行风险分级？不同级别的要求有什么区别？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>答：</strong>EU AI Act 将 AI 系统分为四个风险级别：<strong>不可接受风险</strong>（如社会信用评分，直接禁止）、<strong>高风险</strong>（如信用评估、招聘筛选，需要合格评估、质量管理体系、人类监督）、<strong>有限风险</strong>（如聊天机器人，需告知用户正在与 AI 交互）、<strong>最小风险</strong>（如垃圾邮件过滤，自由使用）。对于 Agent 系统，如果是高风险场景，必须实现人工干预机制、完整的决策日志和可解释性。
+                </p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q3: 在 Agent 系统中，如何设计有效的审计日志？需要记录哪些关键信息？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>答：</strong>审计日志应记录：traceId（追踪ID）、timestamp（时间戳）、userId（脱敏后的用户标识）、input/output（输入输出内容，PII需脱敏）、modelId（模型版本）、confidence（置信度）、toolsUsed（调用的工具列表）、safetyChecks（安全检查结果）。设计原则：不可篡改（追加写入）、PII脱敏（符合GDPR）、可检索（按多维度索引）、合规留存（根据法规确定保留时长）。Spring AI中可通过Advisor模式在每次调用前后自动记录。
+                </p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q4: 中国《生成式AI服务管理暂行办法》对开发者有哪些核心要求？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>答：</strong>核心要求包括：1) <strong>内容安全</strong> — 必须实现输入/输出内容审核，不得生成违规内容；2) <strong>数据合规</strong> — 训练数据不得侵犯知识产权，个人信息处理遵守《个保法》；3) <strong>标识义务</strong> — AI生成的内容需标注，图片视频需嵌入元数据标识；4) <strong>用户告知</strong> — 明确告知用户AI生成属性，服务协议包含风险提示；5) <strong>投诉机制</strong> — 建立投诉举报和快速响应流程；6) <strong>安全评估</strong> — 按规定进行安全评估和算法备案。
+                </p>
+            </div>
+
+            <div class="interview-box">
+                <div class="label">&#128104;&#8205;&#128187; Q5: 如何在 Spring AI 中实现 Agent 的内容安全审核？</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>答：</strong>推荐使用 Spring AI 的 <strong>Advisor 模式</strong>。实现一个 ContentModerationAdvisor 实现 CallAdvisor 接口，在 aroundCall 方法中：1) 提取用户输入，调用安全分类器进行输入审核；2) 调用 chain.nextCall 执行正常流程；3) 对输出内容进行安全审核；4) 记录审计日志。通过 ChatClient.defaultAdvisors 注册，所有请求自动经过审核。安全分类器可以用专门的LLM实现，也可以用关键词匹配+正则作为快速层，LLM作为深度分析层。
+                </p>
+            </div>
+        </section>
+
+        <!-- 练习 -->
+        <section class="section" id="exercises">
+            <h2 class="section-title">&#128187; 动手练习</h2>
+
+            <div class="try-box">
+                <div class="label">&#9997;&#65039; 练习 1：构建公平性检测数据集</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>目标</strong>：构建一组对照样本来测试你的 AI 系统是否存在偏见。<br><br>
+                    <strong>步骤</strong>：<br>
+                    1) 选择一个业务场景（如简历筛选、贷款审批、内容推荐）<br>
+                    2) 构建 10 组对照样本对，每对仅在受保护属性上不同（如姓名暗示不同性别，其他条件相同）<br>
+                    3) 用你的 Agent 系统处理这些样本，记录输出结果<br>
+                    4) 计算输出差异度，判断是否存在偏见<br>
+                    5) 如果存在偏见，尝试应用一种缓解策略并验证效果<br><br>
+                    <strong>进阶</strong>：尝试从 3 个不同维度（性别、年龄、地域）分别构建对照集，综合评估系统的公平性。
+                </p>
+            </div>
+
+            <div class="try-box">
+                <div class="label">&#9997;&#65039; 练习 2：实现完整的审计日志系统</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>目标</strong>：为你的 Agent 系统实现端到端的审计日志功能。<br><br>
+                    <strong>步骤</strong>：<br>
+                    1) 设计审计日志的数据模型（参考本章的 AuditLogEntry）<br>
+                    2) 实现 AuditLogger 服务，包含 PII 脱敏功能<br>
+                    3) 创建 AuditLoggingAdvisor，自动记录每次请求的输入输出<br>
+                    4) 添加日志查询 API，支持按 traceId、时间范围、用户ID 检索<br>
+                    5) 实现一个简单的审计仪表盘，展示最近 24 小时的请求统计和安全事件<br><br>
+                    <strong>进阶</strong>：将审计日志持久化到数据库（如 PostgreSQL），并实现基于 SQL 的合规报表导出功能。
+                </p>
+            </div>
+
+            <div class="try-box">
+                <div class="label">&#9997;&#65039; 练习 3：设计合规检查清单</div>
+                <p style="margin-top: 8px; color: var(--text-secondary);">
+                    <strong>目标</strong>：为你的 AI Agent 产品设计一份合规检查清单。<br><br>
+                    <strong>步骤</strong>：<br>
+                    1) 选择一个目标市场（中国、欧盟或全球）<br>
+                    2) 列出该市场适用的 AI 法规和数据保护法<br>
+                    3) 逐条分析每条法规对 Agent 系统的具体要求<br>
+                    4) 将要求转化为可执行的技术检查项（如"必须在输出中添加AI生成标识"→"实现AI水印Advisor"）<br>
+                    5) 为每个检查项指定优先级（P0必须/P1强烈建议/P2可选）和预计实现工期<br><br>
+                    <strong>交付物</strong>：一份 Markdown 格式的合规检查表，可用于项目启动前的合规评估。
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p><a href="../springai-learning-map.html">&#8592; 返回学习地图</a></p>
+        <p style="margin-top: 8px;">第 14 章：AI 伦理与治理 | Spring AI 学习手册</p>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const pct = (document.documentElement.scrollTop / (document.documentElement.scrollHeight - document.documentElement.clientHeight)) * 100;
+            document.querySelector('.progress-bar').style.cssText = `background: linear-gradient(90deg, var(--primary) ${pct}%, var(--bg-card) ${pct}%)`;
+        });
+        document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+            e.preventDefault();
+            const t = document.querySelector(a.getAttribute('href'));
+            if (t) t.scrollIntoView({ behavior: 'smooth' });
+        }));
+        document.getElementById('navToggle').addEventListener('click', () => document.querySelector('.nav').classList.toggle('open'));
+        const secs = document.querySelectorAll('.section[id]');
+        const navA = document.querySelectorAll('.nav-links a');
+        const obs = new IntersectionObserver(es => es.forEach(e => {
+            if (e.isIntersecting) {
+                const id = e.target.getAttribute('id');
+                navA.forEach(a => { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
+            }
+        }), { rootMargin: '-20% 0px -70% 0px' });
+        secs.forEach(s => obs.observe(s));
+    </script>
+</body>
+</html>
